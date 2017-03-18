@@ -2,8 +2,9 @@
   "name": "stigma",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "./index.js",
   "scripts": {
+    "install": "pwd && tsc --version && tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -18,10 +19,13 @@
     "assertion",
     "valid"
   ],
-  "author": "Davronov Alexander",
+  "author": "Hinell@github.com",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/hinell/stigma/issues"
   },
-  "homepage": "https://github.com/hinell/stigma#readme"
+  "homepage": "https://github.com/hinell/stigma#readme",
+  "devDependencies": {
+    "typescript": "^2.2.1"
+  }
 }
