@@ -1,6 +1,7 @@
 ﻿export type ValidationError = Error | string | void;
 // Here we have an interesting bug with literals
 // see more here: https://github.com/Microsoft/TypeScript/pull/10676#issuecomment-244255103
+// TODO: Write some tests
 export type RuleObj<TargetT> =
     {(this: TargetT, val:any, prop: string): ValidationError}
     | 'required'
@@ -13,8 +14,10 @@ export type RuleObj<TargetT> =
     | 'function'
     | RuleIns | RegExp
 
-export interface RuleIns {test: (targetObj: {}, value: any) => ValidationError }
-export interface RuleCon<TargetT> {
+// TODO: Describe instance type accoroding to existing props of 'this'
+export interface RuleIns {validateOf: (value: any, targetObj: object) => ValidationError }
+// TODO: Simplify constructor. Remove property
+export interface RuleCon<TargetT> {444445
     new (rule: RuleObj<TargetT>, property?: string): RuleIns
         (rule: RuleObj<TargetT>, property?: string): RuleIns
 }
@@ -25,30 +28,27 @@ export const Rule: RuleCon<any> = function (rule,prop) {
     if (rule instanceof Rule) {return rule}
     this.rule  = rule;
     this.prop  = prop;
-
-    this.test = function (target,value) {
-        if (!target) {throw new Error('Invalid argument: target object is required!')}
-        this.val = value;
-        if (this.rule.apply && this.rule.call   ) { return this.rule.call(target,this.val,this.prop) }
-        if (this.rule.exec  && this.rule.test   ) { return this.rule.test(this.val) ? void 0 : '{\''+this.prop+'\': \''+this.val+'\'}\r\nfailed against '+this.rule; }
-        if (this.rule.match && this.rule.substr ) {
-            this.err   = '{ \''+this.prop+'\': ';
-            switch (this.rule) {
-                case 'optional' : return;
-                case 'required' : if(!this.val             ) {return this.err+=' is required!'        +'}' } return
-                case 'number'   : if(!isNumber   (this.val)) {return this.err+=' must have a number  '+'}' } return
-                case 'string'   : if(!isString   (this.val)) {return this.err+=' must have a string  '+'}' } return
-                case 'object'   : if(!isObject   (this.val)) {return this.err+=' must have a object  '+'}' } return
-                case 'date'     : if(!isDate     (this.val)) {return this.err+=' must have a date    '+'}' } return
-                case 'array'    : if(!isArray    (this.val)) {return this.err+=' must have a array   '+'}' } return
-                case 'function' : if(!isFunction (this.val)) {return this.err+=' must have a function'+'}' } return
-            }
-            return
-        }
-        return `Error: { '${this.prop}' : Invalid rule! }`
-    }
 } as any
-
+Rule.prototype.validateOf = function (value,target) {
+    if (!target) {throw new Error('Invalid argument: target object is required!')}
+    this.val = value;
+    if (this.rule.apply && this.rule.call   ) { return this.rule.call(target,this.val,this.prop) }
+    if (this.rule.exec  && this.rule.test   ) { return this.rule.test(this.val) ? void 0 : '{\''+this.prop+'\': \''+this.val+'\'}\r\nfailed against '+this.rule; }
+    if (this.rule.match && this.rule.substr ) {
+        // TODO: Refine this error
+        this.err   = '{ \''+this.prop+'\': ';
+        switch (this.rule) {
+            case 'number'   : if(!isNumber   (this.val)) {return this.err+=' must have a number  '+'}' } return
+            case 'string'   : if(!isString   (this.val)) {return this.err+=' must have a string  '+'}' } return
+            case 'object'   : if(!isObject   (this.val)) {return this.err+=' must have a object  '+'}' } return
+            case 'date'     : if(!isDate     (this.val)) {return this.err+=' must have a date    '+'}' } return
+            case 'array'    : if(!isArray    (this.val)) {return this.err+=' must have a array   '+'}' } return
+            case 'function' : if(!isFunction (this.val)) {return this.err+=' must have a function'+'}' } return
+        }
+        return
+    }
+    return `Error: { '${this.prop}' : Invalid rule! }`
+}
 
 export const isNumber   = function (v) { return typeof v === 'number' };
 export const isString   = function (v) { return typeof v === 'string'  && v.length };
@@ -95,8 +95,8 @@ Schema.prototype._validateOf = function (target) {
         for (let schemakey of skeys) {
             if(targetkey === schemakey) {continue toploop}
         }
-       excessprops.includes(targetkey) || (excessprops.push(targetkey))
-    }
+            excessprops.includes(targetkey) || (excessprops.push(targetkey))
+        }
         if (excessprops.length) {
             return 'Invalid target object: all these properties are excessive\r\n> '+excessprops.join('\r\n> ')+'\r\n'
                 +'\r\n\r\nTry to use excessiveProps option in the new Schema constructor to bypass this error.'
@@ -107,11 +107,13 @@ Schema.prototype._validateOf = function (target) {
     let rule    = this.schema_[k];
     let value   = target[k];
     if (rule instanceof Schema) { let err; if (err = rule.validateOf(value) ) { return err} }
-    if (rule instanceof Rule)   { let err; if (err = rule.test(target,value)) { return err} }
+    if (rule instanceof Rule)   { let err; if (err = rule.validateOf(value,target)) { return err} }
         Array.isArray(rule) || (rule = [rule]);
     let err;
     for (let current of rule) {
-        if(err = new Rule(current,k).test(target,value) ){return err} }
+        if(current == 'required' && !value) { return '{ '+k+' : is required! }' }
+        if(current == 'optional' && !value) { break }
+        if(err = new Rule(current,k).validateOf(value,target) ){return err} }
 
     }
 };
