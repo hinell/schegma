@@ -1,8 +1,7 @@
 ﻿export type ValidationError = Error | string | void;
 // Here we have an interesting bug with literals
 // see more here: https://github.com/Microsoft/TypeScript/pull/10676#issuecomment-244255103
-// TODO: Write some tests
-export type RuleObj<TargetT> =
+export type RuleT<TargetT> =
     {(this: TargetT, val:any, prop: string): ValidationError}
     | 'required'
     | 'optional'
@@ -14,12 +13,11 @@ export type RuleObj<TargetT> =
     | 'function'
     | RuleIns | RegExp
 
-// TODO: Describe instance type accoroding to existing props of 'this'
 export interface RuleIns {validateOf: (value: any, targetObj: object) => ValidationError }
 // TODO: Simplify constructor. Remove property
-export interface RuleCon<TargetT> {444445
-    new (rule: RuleObj<TargetT>, property?: string): RuleIns
-        (rule: RuleObj<TargetT>, property?: string): RuleIns
+export interface RuleCon<TargetT> {
+    new (rule: RuleT<TargetT>, property?: string): RuleIns
+        (rule: RuleT<TargetT>, property?: string): RuleIns
 }
 // @param {RegExp|function|Rule| Array<any>} Test - Test object
 // @param {string} Property name
@@ -35,7 +33,7 @@ Rule.prototype.validateOf = function (value,target) {
     if (this.rule.apply && this.rule.call   ) { return this.rule.call(target,this.val,this.prop) }
     if (this.rule.exec  && this.rule.test   ) { return this.rule.test(this.val) ? void 0 : '{\''+this.prop+'\': \''+this.val+'\'}\r\nfailed against '+this.rule; }
     if (this.rule.match && this.rule.substr ) {
-        // TODO: Refine this error
+        // TODO: Refine this error output
         this.err   = '{ \''+this.prop+'\': ';
         switch (this.rule) {
             case 'number'   : if(!isNumber   (this.val)) {return this.err+=' must have a number  '+'}' } return
@@ -62,7 +60,7 @@ export interface SchemaIns {
     validateOf(target: {},cb: (err: ValidationError) => void ): void
 }
 
-export type Descriptor<TargetT> = RuleObj<TargetT> | SchemaIns;
+export type Descriptor<TargetT> = RuleT<TargetT> | SchemaIns;
 export interface SchemaSingle<TargetT> { [key: string] : Descriptor<TargetT>   }
 export interface SchemaArray <TargetT> { [key: string] : Descriptor<TargetT>[] }
 export interface SchemaMixed <TargetT> { [key: string] : Descriptor<TargetT> | Descriptor<TargetT>[] }
