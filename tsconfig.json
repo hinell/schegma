@@ -27,7 +27,7 @@
                                               // ► For --target ES6: DOM,ES6,DOM.Iterable,ScriptHost
   //,"outDir"                 : "./dist"      // Redirect output structure to the directory.
   }
-  // ,"files"    : ["./typings/index.d.ts"]  // Uncomment when using typings tool and typings/index.d.ts exists
+   ,"files"    : ["./typings/index.d.ts"]  // Uncomment when using typings tool and typings/index.d.ts exists
   ,"include"  : ["./*","./src/**/*"]
 //,"exclude"  : []                        //  Default to: "node_modules", "bower_components", "jspm_packages" and <outDir>
 }
