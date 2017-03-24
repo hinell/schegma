@@ -83,10 +83,11 @@ export const Schema: SchemaCon = function (schemaDescriptor,excessiveProps = tru
     this.schema_        = schemaDescriptor;
 } as any;
 Schema.prototype._validateOf = function (target) {
+    if(isString(target)) { return 'validateOf() - Invalid argument: object is expected' }
     let skeys       = Object.keys(this.schema_);    // keys of schema provided by new constructor()
     let tkeys       = Object.keys(target);          // keys of target provided by validateOf()
     if (!skeys.length) { return 'Invalid schema: schema object requires at least one prop'          }
-    if (!tkeys.length) { return 'Invalid target: target object requires all ['+skeys+'] properties' }
+    if (!tkeys.length) { return 'validateOf() - Invalid argument: [ '+skeys+' ] properties are required' }
     if (this.excessiveProps) {
         let excessprops = [];
         toploop:
@@ -105,8 +106,8 @@ Schema.prototype._validateOf = function (target) {
     for (let k of skeys) {
     let rule    = this.schema_[k];
     let value   = target[k];
-    if (rule instanceof Schema) { let err; if (err = rule.validateOf(value) ) { return err} }
-    if (rule instanceof Rule)   { let err; if (err = rule.validateOf(value,target)) { return err} }
+    if (rule instanceof Schema) { let err; if (err = rule.validateOf(value) ) { return err}       continue }
+    if (rule instanceof Rule)   { let err; if (err = rule.validateOf(value,target)) { return err} continue }
         Array.isArray(rule) || (rule = [rule]);
     let err;
     for (let current of rule) {

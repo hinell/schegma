@@ -2,7 +2,10 @@ import {Schema, SchemaMixed, isNumber} from './stigma'
 import {ifError} from "assert";
 
 let schema = {
-      name      : 'string'
+      name      : new Schema({
+         first   : 'string'
+        ,second  : ['optional','string']
+      })
     , outdated  : 'boolean'
     , phone     : 'number'
     , desc      : ['optional','string']
@@ -12,7 +15,7 @@ let schema = {
 } as SchemaMixed<any>;
 
 let target = {
-      name      : 'James'
+      name      : {first: '1234', second:  '1234'}
     , phone     : 9998887766
     , outdated  : true
     , desc      : null // missing - validateOf() has to return no errors here
