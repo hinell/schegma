@@ -3,6 +3,7 @@ import {ifError} from "assert";
 
 let schema = {
       name      : 'string'
+    , outdated  : 'boolean'
     , phone     : 'number'
     , desc      : ['optional','string']
     , itemsID   : ['array',function(value,key){ return value.every(isNumber) ? void 0 : '{ '+key+': array of numbers expected! }'}]
@@ -13,6 +14,7 @@ let schema = {
 let target = {
       name      : 'James'
     , phone     : 9998887766
+    , outdated  : true
     , desc      : null // missing - validateOf() has to return no errors here
     , itemsID   : [1,3,4,5]
     , message   : function () { return 'HELLO!' }
