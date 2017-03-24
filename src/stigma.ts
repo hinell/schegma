@@ -8,7 +8,7 @@ export type RuleT<TargetT> =
     | 'array'
     | 'number'
     | 'string'
-    | 'object'
+    | 'boolean'
     | 'date'
     | 'function'
     | RuleIns | RegExp
@@ -36,9 +36,9 @@ Rule.prototype.validateOf = function (value,target) {
         // TODO: Refine this error output
         this.err   = '{ \''+this.prop+'\': ';
         switch (this.rule) {
+            case 'boolean'  : if(!isBoolean  (this.val)) {return this.err+=' must have a boolean '+'}' } return
             case 'number'   : if(!isNumber   (this.val)) {return this.err+=' must have a number  '+'}' } return
             case 'string'   : if(!isString   (this.val)) {return this.err+=' must have a string  '+'}' } return
-            case 'object'   : if(!isObject   (this.val)) {return this.err+=' must have a object  '+'}' } return
             case 'date'     : if(!isDate     (this.val)) {return this.err+=' must have a date    '+'}' } return
             case 'array'    : if(!isArray    (this.val)) {return this.err+=' must have a array   '+'}' } return
             case 'function' : if(!isFunction (this.val)) {return this.err+=' must have a function'+'}' } return
@@ -48,12 +48,13 @@ Rule.prototype.validateOf = function (value,target) {
     return `Error: { '${this.prop}' : Invalid rule! }`
 }
 
+export const isBoolean  = function (v) { return typeof v === 'boolean' };
 export const isNumber   = function (v) { return typeof v === 'number' };
 export const isString   = function (v) { return typeof v === 'string'  && v.length };
-export const isObject   = function (v) { return !!(v && Object.keys(v).length )};
 export const isDate     = function (v) { return !!(v && v.setSeconds   && v.setMinutes && v.setHours  && v.toDateString )};
 export const isArray    = function (v) { return !!(v && v.pop          && v.shift      && v.slice     && v.map )};
 export const isFunction = function (v) { return !!(v && v.bind         && v.call       && v.apply     && v.prototype )};
+export const isRegExp   = function (v) { return !!(v && v.exec         && v.test       && isBoolean(v.global)) };
 
 export interface SchemaIns {
     validateOf(target: {}): ValidationError
