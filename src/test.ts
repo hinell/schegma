@@ -1,5 +1,5 @@
 import {Schema, SchemaMixed, isNumber} from './stigma'
-import {ifError} from "assert";
+import {ifError, ok} from "assert";
 
 let schema = {
       name      : new Schema({
@@ -25,4 +25,5 @@ let target = {
     };
 
 ifError(new Schema(schema).validateOf(target));
+ok(new Schema({name: 'string'}).validateOf({name: 1 }));
 console.log('All tests passed successfully');

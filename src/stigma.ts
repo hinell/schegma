@@ -56,19 +56,19 @@ export const isArray    = function (v) { return !!(v && v.pop          && v.shif
 export const isFunction = function (v) { return !!(v && v.bind         && v.call       && v.apply     && v.prototype )};
 export const isRegExp   = function (v) { return !!(v && v.exec         && v.test       && isBoolean(v.global)) };
 
-export interface SchemaIns {
-    validateOf(target: {}): ValidationError
-    validateOf(target: {},cb: (err: ValidationError) => void ): void
+export interface SchemaIns<TargetT> {
+    validateOf(target: TargetT & object): ValidationError
+    validateOf(target: TargetT & object,cb: (err: ValidationError) => void ): void
 }
 
-export type Descriptor<TargetT> = RuleT<TargetT> | SchemaIns;
+export type Descriptor<TargetT> = RuleT<TargetT> | SchemaIns<TargetT>;
 export interface SchemaSingle<TargetT> { [key: string] : Descriptor<TargetT>   }
 export interface SchemaArray <TargetT> { [key: string] : Descriptor<TargetT>[] }
 export interface SchemaMixed <TargetT> { [key: string] : Descriptor<TargetT> | Descriptor<TargetT>[] }
 
 export interface SchemaCon {
-    new <TargetT>(obj: SchemaSingle<TargetT> | SchemaArray<TargetT> | SchemaMixed<TargetT>, excessPropertyCheck?: boolean): SchemaIns
-        <TargetT>(obj: SchemaSingle<TargetT> | SchemaArray<TargetT> | SchemaMixed<TargetT>, excessPropertyCheck?: boolean): SchemaIns
+    new <TargetT>(obj: SchemaSingle<TargetT> | SchemaArray<TargetT> | SchemaMixed<TargetT>, excessPropertyCheck?: boolean): SchemaIns<TargetT>
+        <TargetT>(obj: SchemaSingle<TargetT> | SchemaArray<TargetT> | SchemaMixed<TargetT>, excessPropertyCheck?: boolean): SchemaIns<TargetT>
 }
 
 // Usage:
