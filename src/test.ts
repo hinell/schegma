@@ -33,8 +33,9 @@ ok(err = new Stigma({name: 'string'}).validateOf({name: 1 }),err);
 let schematictest = new Stigma({foo: new Stigma({bar: 'string'}) });
 
 [true,999,{},new RegExp('.*')].every(function (el){
-    let err = schematictest.validateOf({foo: {bar: el}})
-    return ok(err,err)
+    let err = <any> schematictest.validateOf({foo: {bar: el}})
+    ok(err,err)
+    return err
 } )
 
 }
