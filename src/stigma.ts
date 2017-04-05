@@ -74,15 +74,16 @@ export interface SchemaCon {
 // Usage:
 // errmsg = 'Has to be string'
 // test   = [function(val){ return typeof val === 'string'}] // or just function
-// schema = new Schema({foo: {test: test , err: errmsg}})
+// schema = new Stigma({foo: {test: test , err: errmsg}})
 // schema.validateOf({foo: 1}, function(err){ console.log(err == errmsg) })
 // @param {object}  - Object with description of his types
 // @param {boolean} - If true then doesn't check excessive properties
-export const Schema: SchemaCon = function (schemaDescriptor,excessiveProps = true) {
+export const Stigma: SchemaCon = function (schemaDescriptor,excessiveProps = true) {
     this.excessiveProps = excessiveProps;   // true by default
     this.schema_        = schemaDescriptor;
 } as any;
-Schema.prototype._validateOf = function (target) {
+Stigma.prototype.constructor = Stigma
+Stigma.prototype._validateOf = function (target) {
     if(isString(target)) { return 'validateOf() - Invalid argument: object is expected' }
     let skeys       = Object.keys(this.schema_);    // keys of schema provided by new constructor()
     let tkeys       = Object.keys(target);          // keys of target provided by validateOf()
@@ -99,14 +100,14 @@ Schema.prototype._validateOf = function (target) {
         }
         if (excessprops.length) {
             return 'Invalid target object: all these properties are excessive\r\n> '+excessprops.join('\r\n> ')+'\r\n'
-                +'\r\n\r\nTry to use excessiveProps option in the new Schema constructor to bypass this error.'
+                +'\r\n\r\nTry to use excessiveProps option in the new Stigma constructor to bypass this error.'
         }
     }
 
     for (let k of skeys) {
     let rule    = this.schema_[k];
     let value   = target[k];
-    if (rule instanceof Schema) {
+    if (rule instanceof Stigma) {
         let err;
         if (!value) { return '{ '+k+' : is required! }' }
         if (err = rule.validateOf(value) ) { return err}
@@ -129,7 +130,7 @@ Schema.prototype._validateOf = function (target) {
 
 // @param {object} - object to compare schema against
 // @callback - optional
-Schema.prototype.validateOf = function (target,cb) {
+Stigma.prototype.validateOf = function (target,cb) {
     let err = this._validateOf(target);
     if (cb) { err ? cb(err) : cb() } else {return err }
 };
