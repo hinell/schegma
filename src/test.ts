@@ -1,8 +1,8 @@
-import {Schema, SchemaMixed, isNumber} from './stigma'
+import {Stigma, SchemaMixed, SchemaSingle, isNumber} from './stigma'
 import {ifError, ok} from "assert";
 
 let schema = {
-      name      : new Schema({
+      name      : new Stigma({
          first   : 'string'
         ,second  : ['optional','string']
       })
@@ -24,6 +24,18 @@ let target = {
     , test      : '333-444'
     };
 
-ifError(new Schema(schema).validateOf(target));
-ok(new Schema({name: 'string'}).validateOf({name: 1 }));
+ifError(new Stigma(schema).validateOf(target));
+{
+let err;
+ok(err = new Stigma({name: 'string'}).validateOf({name: 1 }),err);
+}
+{
+let schematictest = new Stigma({foo: new Stigma({bar: 'string'}) });
+
+[true,999,{},new RegExp('.*')].every(function (el){
+    let err = schematictest.validateOf({foo: {bar: el}})
+    return ok(err,err)
+} )
+
+}
 console.log('All tests passed successfully');
