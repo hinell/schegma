@@ -31,4 +31,5 @@ fabric.properties
 *.iml
 typings
 src/**/*.js
+index.js
 dist/
