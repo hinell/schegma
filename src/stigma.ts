@@ -106,8 +106,17 @@ Schema.prototype._validateOf = function (target) {
     for (let k of skeys) {
     let rule    = this.schema_[k];
     let value   = target[k];
-    if (rule instanceof Schema) { let err; if (err = rule.validateOf(value) ) { return err}       continue }
-    if (rule instanceof Rule)   { let err; if (err = rule.validateOf(value,target)) { return err} continue }
+    if (rule instanceof Schema) {
+        let err;
+        if (!value) { return '{ '+k+' : is required! }' }
+        if (err = rule.validateOf(value) ) { return err}
+        continue
+    }
+    if (rule instanceof Rule)   { 
+        if (!value) { return '{ '+k+' : is required! }' }
+        let err; if (err = rule.validateOf(value,target)) { return err} 
+        continue 
+    }
         Array.isArray(rule) || (rule = [rule]);
     let err;
     for (let current of rule) {
