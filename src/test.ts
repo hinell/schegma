@@ -27,10 +27,10 @@ let target = {
 ifError(new Stigma(schema).validateOf(target));
 {
 let err;
-ok(err = new Stigma({name: 'string'}).validateOf({name: 1 }),err);
+ok(err = new Stigma<any>({name: 'string'}).validateOf({name: 1 }),err);
 }
 {
-let schematictest = new Stigma({foo: new Stigma({bar: 'string'}) });
+let schematictest = new Stigma<any>({foo: new Stigma({bar: 'string'}) });
 
 [true,999,{},new RegExp('.*')].every(function (el){
     let err = <any> schematictest.validateOf({foo: {bar: el}})
