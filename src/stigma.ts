@@ -61,10 +61,10 @@ export interface SchemaIns<TargetT> {
     validateOf(target: TargetT & object,cb: (err: ValidationError) => void ): void
 }
 
-export type Descriptor<TargetT> = RuleT<TargetT> | SchemaIns<TargetT>;
-export interface SchemaSingle<TargetT> { [key: string] : Descriptor<TargetT>   }
-export interface SchemaArray <TargetT> { [key: string] : Descriptor<TargetT>[] }
-export interface SchemaMixed <TargetT> { [key: string] : Descriptor<TargetT> | Descriptor<TargetT>[] }
+export type Descriptor  <TargetT> = RuleT<TargetT> | SchemaIns<TargetT>;
+export type SchemaSingle<TargetT> = { [K in keyof TargetT] : Descriptor<TargetT>   }
+export type SchemaArray <TargetT> = { [K in keyof TargetT] : Descriptor<TargetT>[] }
+export type SchemaMixed <TargetT> = { [K in keyof TargetT] : Descriptor<TargetT> | Descriptor<TargetT>[] }
 
 export interface SchemaCon {
     new <TargetT>(obj: SchemaSingle<TargetT> | SchemaArray<TargetT> | SchemaMixed<TargetT>, excessPropertyCheck?: boolean): SchemaIns<TargetT>

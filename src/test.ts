@@ -1,7 +1,7 @@
 import {Stigma, SchemaMixed, SchemaSingle, isNumber} from './stigma'
 import {ifError, ok} from "assert";
 
-let schema = {
+let schema: SchemaMixed<any> =  {
       name      : new Stigma({
          first   : 'string'
         ,second  : ['optional','string']
@@ -12,7 +12,7 @@ let schema = {
     , itemsID   : ['array',function(value,key){ return value.every(isNumber) ? void 0 : '{ '+key+': array of numbers expected! }'}]
     , message   : 'function'
     , test      : /^\d\d\d-\d\d\d$/g
-} as SchemaMixed<any>;
+}
 
 let target = {
       name      : {first: '1234', second:  '1234'}
