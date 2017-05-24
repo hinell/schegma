@@ -4,8 +4,8 @@
   "description": "",
   "main": "./index.js",
   "scripts": {
-    "install": "pwd && tsc --version && tsc",
-    "test": "tsc && node src/test.js"
+    "test": "node src/test.js ",
+    "postinstall": "typings i && tsc"
   },
   "repository": {
     "type": "git",
@@ -26,6 +26,7 @@
   },
   "homepage": "https://github.com/hinell/stigma#readme",
   "devDependencies": {
+    "typings": "",
     "typescript": "^2.2.1"
   }
 }

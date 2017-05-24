@@ -48,13 +48,13 @@ Rule.prototype.validateOf = function (value,target) {
     return `Error: { '${this.prop}' : Invalid rule! }`
 }
 
-export const isBoolean  = function (v) { return typeof v === 'boolean' };
-export const isNumber   = function (v) { return typeof v === 'number' };
-export const isString   = function (v) { return typeof v === 'string'  && v.length };
-export const isDate     = function (v) { return !!(v && v.setSeconds   && v.setMinutes && v.setHours  && v.toDateString )};
-export const isArray    = function (v) { return !!(v && v.pop          && v.shift      && v.slice     && v.map )};
-export const isFunction = function (v) { return !!(v && v.bind         && v.call       && v.apply     && v.prototype )};
-export const isRegExp   = function (v) { return !!(v && v.exec         && v.test       && isBoolean(v.global)) };
+export const isBoolean  = function (v) { return typeof v === 'boolean'              };
+export const isNumber   = function (v) { return typeof v === 'number'               };
+export const isString   = function (v) { return typeof v === 'string'  && v.length  };
+export const isDate     = function (v) { return v instanceof Date                   };
+export const isArray    = function (v) { return v instanceof Array                  };
+export const isFunction = function (v) { return v instanceof Function               };
+export const isRegExp   = function (v) { return v instanceof RegExp                 };
 
 export interface SchemaIns<TargetT> {
     validateOf(target: TargetT & object): ValidationError
