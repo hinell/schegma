@@ -46,9 +46,9 @@ $ npm i hinell/stigma -S
 ## USAGE
 [u]: #usage 'Module usage'
 
-***DATA, SCHEMA, VALIDATOR (DSV)*** <br>
-TLDR; The main idea behind this module is to address the need of checking out the validity of some run-time ``data`` (denotes **D**)<br>
-structure by means of schema ``validation`` against its instance.<br>
+***DATA, SCHEMA, VALIDATOR — DSV*** <br>
+TLDR; The main idea behind this module is to address the need of checking out the validity of some ``data`` (denotes **D**)<br>
+structure (key-value storage) by means of schema ``validation`` against its instance.<br>
 The ``schema`` (**S**) here is just a shape (object) which we want to *cast* out from existing data instance<br>
 each key of which (schema) denotes the value type (but not only) that the ``data``'s keys are expected to contain.
 The process of a such comparison is the exact thing that **Stigma** (**V**) do: validates some schema against doubtful object containing data<br>
@@ -61,17 +61,22 @@ relieving us from tonnes of heavy input checking code taking that routines on it
 Let's assume we want to add ``_id`` field validation, but how we do this?
 Just let's flavour our schema by one function that returns a string signifying an error message that we could use later:
 ```typescript
-  let schema        = {_id: function checkIfId(value){
-    return value instanceof SomeIDClass ? null : 'IDClass instance expected!'
+  let schema        = {_id: function checkIDInstance(value){
+    return (value instanceof SomeIDClass) ? null : 'IDClass instance expected!'
   }}
+  let validator     = new Stigma(schema)
+      validator.validateOf(dataScturcture,function (error){
+        if(error) ...
+        resolve(dataScturcture)
+      })
+  
+  
 ```
 
 
 ### API
 [a]: #api 'Module\'s API description'
-#### WARNING: 
-This api is subject to change!
-Make sure you know what you're doing!
+#### WARNING!: This api is subject to change! Make sure you know what you're doing!
 
 ```typescript
 // where the key could be any of 'string' | 'number' | 'array' | 'optional' | 'required' or array of specified types
@@ -82,6 +87,8 @@ let error     = validator.validateOf(someObject);
                 validator.validateOf(someObject,function(error){  })
 ```
 
+Check out the [Stigma](./src/stigma.ts#L1) source code for more details.
+
 ### CREDITS/CONTACT AUTHOR
 [c]: #creditscontact-author 'Credits & author\'s contacts info '
 You can follow me on [twitter](https://twitter.com/biteofpie) or just [email](mailto:al.neodim@gmail.com) me.
@@ -90,4 +97,4 @@ You can follow me on [twitter](https://twitter.com/biteofpie) or just [email](ma
 
 [cpl]:#contribution-production-use--license 'Contribution guide, usage in production status & license info'
 
-Follow (if any present) to the <a href='/CONTRIBUTION'>contribution guide</a> or <a href='/LICENSE'>license</a> for more details.
+Check out (if any) <a href='/CONTRIBUTION'>contribution guide</a> or <a href='/LICENSE'>license</a> for more details.
