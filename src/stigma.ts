@@ -71,11 +71,6 @@ export interface SchemaCon {
         <TargetT>(obj: SchemaSingle<TargetT> | SchemaArray<TargetT> | SchemaMixed<TargetT>, excessPropertyCheck?: boolean): SchemaIns<TargetT>
 }
 
-// Usage:
-// errmsg = 'Has to be string'
-// test   = [function(val){ return typeof val === 'string'}] // or just function
-// schema = new Stigma({foo: {test: test , err: errmsg}})
-// schema.validateOf({foo: 1}, function(err){ console.log(err == errmsg) })
 // @param {object}  - Object with description of his types
 // @param {boolean} - If true then doesn't check excessive properties
 export const Stigma: SchemaCon = function (schemaDescriptor,excessiveProps = true) {
