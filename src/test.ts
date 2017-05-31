@@ -29,7 +29,6 @@ import {ifError, ok, equal} from "assert";
         };
     let err: any = new Stigma(schema).validateOf(target);
         ifError(err);
-
 }
 
 {
