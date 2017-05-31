@@ -10,7 +10,12 @@ export type RuleT<TargetT> =
     | 'string'
     | 'boolean'
     | 'date'
-    | 'function'
+    | FunctionConstructor
+    | NumberConstructor
+    | StringConstructor
+    | BooleanConstructor
+    | ArrayConstructor
+    | DateConstructor
     | RuleIns | RegExp
 
 export interface RuleIns {validateOf: (value: any, targetObj: object) => ValidationError }
@@ -31,24 +36,32 @@ Rule: RuleCon<any> = function (rule,prop) {
 Rule.prototype.validateOf = function (value,target) {
     if (!target) {throw new Error('Invalid argument: target object is required!')}
     this.val = value;
-    let errorMessage = function (msg,prop){
-        return prop
-            ? `Invalid object: { ${prop} : must be of ${msg} type } `
-            : `Invalid object: { }`
+    let checkOutVal = function (conresultOfCodition,message){
+        if(conresultOfCodition == true) {
+            return  `Invalid object: { ${this.prop} : must be of ${message} type } `
+        }
+    }.bind(this)
+    if (isFunction(this.rule)   ) {
+        switch (this.rule) {
+            case Boolean  : return checkOutVal(!isBoolean  (this.val),'boolean' );
+            case Number   : return checkOutVal(!isNumber   (this.val),'number'  );
+            case String   : return checkOutVal(!isString   (this.val),'string'  );
+            case Date     : return checkOutVal(!isDate     (this.val),'date'    );
+            case Array    : return checkOutVal(!isArray    (this.val),'array'   );
+            default       : return this.rule.call(target,this.val,this.prop)
+        }
     }
-    if (isFunction(this.rule)   ) { return this.rule.call(target,this.val,this.prop) }
     if (isRegExp(this.rule)     ) { return this.rule.test(this.val) ? void 0 : '{\''+this.prop+'\': \''+this.val+'\'}\r\nfailed against '+this.rule; }
     if (isString(this.rule)     ) {
         switch (this.rule) {
-            case 'boolean'  : if(!isBoolean  (this.val)) {return errorMessage('boolean' , this.prop) } return;
-            case 'number'   : if(!isNumber   (this.val)) {return errorMessage('number'  , this.prop) } return;
-            case 'string'   : if(!isString   (this.val)) {return errorMessage('string'  , this.prop) } return;
-            case 'date'     : if(!isDate     (this.val)) {return errorMessage('date'    , this.prop) } return;
-            case 'array'    : if(!isArray    (this.val)) {return errorMessage('array'   , this.prop) } return;
-            case 'function' : if(!isFunction (this.val)) {return errorMessage('function', this.prop) } return;
+            case 'boolean'  : return checkOutVal(!isBoolean  (this.val),'boolean' );
+            case 'number'   : return checkOutVal(!isNumber   (this.val),'number'  );
+            case 'string'   : return checkOutVal(!isString   (this.val),'string'  );
+            case 'date'     : return checkOutVal(!isDate     (this.val),'date'    );
+            case 'array'    : return checkOutVal(!isArray    (this.val),'array'   );
         }
     }
-    return `Error: { '${this.prop}' : Invalid rule! ${this.rule} }`
+    return `Error: Invalid rule!:  { '${this.prop}' :  ${this.rule} } `
 }
 
 export const isBoolean  = function (v) { return typeof v === 'boolean'              };
@@ -123,10 +136,14 @@ Stigma.prototype._validateOf = function (target) {
         }
             Array.isArray(rule) || (rule = [rule]);
         for (let current of rule) {
-            if(current == 'required' && !value) { return '{ '+schemakey+' : is required! }' }
+            if(current == 'required') {
+                // if no value, then return error message
+                if(value == void 0){ return `{ ${schemakey} : is required! }`}
+                else { continue } // iterate over to the next rule
+            }
             if(current == 'optional') {
-                if(value == void 0 || value == '') { break } // if no value present then break
-                else { continue }                            // else continue to next rule
+                if(value == void 0) { break } // if no value present then break
+                else { continue }             // else continue to next rule
             }
             if(err = new Rule(current,schemakey).validateOf(value,target) ){return err} }
 
