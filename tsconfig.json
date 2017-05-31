@@ -20,6 +20,7 @@
     ,"noImplicitThis"	      : false         // Raise error on this expressions with an implied any type.
     ,"noImplicitUseStrict"	  : true          // Do not emit "use strict" directives in module output.
     ,"noEmitOnError"          : true          // Do not emit .js outputs
+    ,"allowUnreachableCode"   : true
   //,"outFile"                : "./index.js"  // Concatenate and emit output to single file. See output file order documentation for more details.
   //,"typeRoots"              : ["node_modules/@types"] // roots of packages to be included into compilation
     ,"lib"                    : ["ES5","DOM","ES6","ES2015","ES2016"] // The default library injected are:
