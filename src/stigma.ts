@@ -10,7 +10,12 @@ export type RuleT<TargetT> =
     | 'string'
     | 'boolean'
     | 'date'
-    | 'function'
+    | FunctionConstructor
+    | NumberConstructor
+    | StringConstructor
+    | BooleanConstructor
+    | ArrayConstructor
+    | DateConstructor
     | RuleIns | RegExp
 
 export interface RuleIns {validateOf: (value: any, targetObj: object) => ValidationError }
@@ -21,7 +26,8 @@ export interface RuleCon<TargetT> {
 }
 // @param {RegExp|function|Rule| Array<any>} Test - Test object
 // @param {string} Property name
-export const Rule: RuleCon<any> = function (rule,prop) {
+export const
+Rule: RuleCon<any> = function (rule,prop) {
     if (!rule) { throw new Error('Invalid rule: function, string, regExp or Rule instance is expected!')}
     if (rule instanceof Rule) {return rule}
     this.rule  = rule;
@@ -30,22 +36,32 @@ export const Rule: RuleCon<any> = function (rule,prop) {
 Rule.prototype.validateOf = function (value,target) {
     if (!target) {throw new Error('Invalid argument: target object is required!')}
     this.val = value;
-    if (this.rule.apply && this.rule.call   ) { return this.rule.call(target,this.val,this.prop) }
-    if (this.rule.exec  && this.rule.test   ) { return this.rule.test(this.val) ? void 0 : '{\''+this.prop+'\': \''+this.val+'\'}\r\nfailed against '+this.rule; }
-    if (this.rule.match && this.rule.substr ) {
-        // TODO: Refine this error output
-        this.err   = '{ \''+this.prop+'\': ';
-        switch (this.rule) {
-            case 'boolean'  : if(!isBoolean  (this.val)) {return this.err+=' must have a boolean '+'}' } return
-            case 'number'   : if(!isNumber   (this.val)) {return this.err+=' must have a number  '+'}' } return
-            case 'string'   : if(!isString   (this.val)) {return this.err+=' must have a string  '+'}' } return
-            case 'date'     : if(!isDate     (this.val)) {return this.err+=' must have a date    '+'}' } return
-            case 'array'    : if(!isArray    (this.val)) {return this.err+=' must have a array   '+'}' } return
-            case 'function' : if(!isFunction (this.val)) {return this.err+=' must have a function'+'}' } return
+    let checkOutVal = function (conresultOfCodition,message){
+        if(conresultOfCodition == true) {
+            return  `Invalid object: { ${this.prop} : must be of ${message} type } `
         }
-        return
+    }.bind(this)
+    if (isFunction(this.rule)   ) {
+        switch (this.rule) {
+            case Boolean  : return checkOutVal(!isBoolean  (this.val),'boolean' );
+            case Number   : return checkOutVal(!isNumber   (this.val),'number'  );
+            case String   : return checkOutVal(!isString   (this.val),'string'  );
+            case Date     : return checkOutVal(!isDate     (this.val),'date'    );
+            case Array    : return checkOutVal(!isArray    (this.val),'array'   );
+            default       : return this.rule.call(target,this.val,this.prop)
+        }
     }
-    return `Error: { '${this.prop}' : Invalid rule! }`
+    if (isRegExp(this.rule)     ) { return this.rule.test(this.val) ? void 0 : '{\''+this.prop+'\': \''+this.val+'\'}\r\nfailed against '+this.rule; }
+    if (isString(this.rule)     ) {
+        switch (this.rule) {
+            case 'boolean'  : return checkOutVal(!isBoolean  (this.val),'boolean' );
+            case 'number'   : return checkOutVal(!isNumber   (this.val),'number'  );
+            case 'string'   : return checkOutVal(!isString   (this.val),'string'  );
+            case 'date'     : return checkOutVal(!isDate     (this.val),'date'    );
+            case 'array'    : return checkOutVal(!isArray    (this.val),'array'   );
+        }
+    }
+    return `Error: Invalid rule!:  { '${this.prop}' :  ${this.rule} } `
 }
 
 export const isBoolean  = function (v) { return typeof v === 'boolean'              };
@@ -61,27 +77,28 @@ export interface SchemaIns<TargetT> {
     validateOf(target: TargetT & object,cb: (err: ValidationError) => void ): void
 }
 
-export type Descriptor<TargetT> = RuleT<TargetT> | SchemaIns<TargetT>;
-export interface SchemaSingle<TargetT> { [key: string] : Descriptor<TargetT>   }
-export interface SchemaArray <TargetT> { [key: string] : Descriptor<TargetT>[] }
-export interface SchemaMixed <TargetT> { [key: string] : Descriptor<TargetT> | Descriptor<TargetT>[] }
+export type Descriptor  <TargetT> = RuleT<TargetT> | SchemaIns<TargetT>;
+export type SchemaSingle<TargetT> = { [K in keyof TargetT] : Descriptor<TargetT>   }
+export type SchemaArray <TargetT> = { [K in keyof TargetT] : Descriptor<TargetT>[] }
+export type SchemaMixed <TargetT> = { [K in keyof TargetT] : Descriptor<TargetT> | Descriptor<TargetT>[] }
 
 export interface SchemaCon {
-    new <TargetT>(obj: SchemaSingle<TargetT> | SchemaArray<TargetT> | SchemaMixed<TargetT>, excessPropertyCheck?: boolean): SchemaIns<TargetT>
-        <TargetT>(obj: SchemaSingle<TargetT> | SchemaArray<TargetT> | SchemaMixed<TargetT>, excessPropertyCheck?: boolean): SchemaIns<TargetT>
+    new <TargetT = any>(obj: SchemaSingle<TargetT> | SchemaArray<TargetT> | SchemaMixed<TargetT>, excessPropertyCheck?: boolean): SchemaIns<TargetT>
+        <TargetT = any>(obj: SchemaSingle<TargetT> | SchemaArray<TargetT> | SchemaMixed<TargetT>, excessPropertyCheck?: boolean): SchemaIns<TargetT>
 }
 
 // @param {object}  - Object with description of his types
 // @param {boolean} - If true then doesn't check excessive properties
-export const Stigma: SchemaCon = function (schemaDescriptor,excessiveProps = true) {
+export const
+Stigma: SchemaCon = function (schemaDescriptor,excessiveProps = true) {
     this.excessiveProps = excessiveProps;   // true by default
     this.schema_        = schemaDescriptor;
 } as any;
 Stigma.prototype.constructor = Stigma
 Stigma.prototype._validateOf = function (target) {
     if(isString(target)) { return 'validateOf() - Invalid argument: object is expected' }
-    let skeys       = Object.keys(this.schema_);    // keys of schema provided by new constructor()
-    let tkeys       = Object.keys(target);          // keys of target provided by validateOf()
+    let skeys       = Object.keys(this.schema_);    // keys of schema object provided by new constructor(schema)
+    let tkeys       = Object.keys(target);          // keys of target object provided by validateOf(target)
     if (!skeys.length) { return 'Invalid schema: schema object requires at least one prop'          }
     if (!tkeys.length) { return 'validateOf() - Invalid argument: [ '+skeys+' ] properties are required' }
     if (this.excessiveProps) {
@@ -99,26 +116,36 @@ Stigma.prototype._validateOf = function (target) {
         }
     }
 
-    for (let k of skeys) {
-    let rule    = this.schema_[k];
-    let value   = target[k];
-    if (rule instanceof Stigma) {
+    for (let schemakey of skeys) {
+        let rule    = this.schema_[schemakey];
+        let value   = target[schemakey];
         let err;
-        if (!value) { return '{ '+k+' : is required! }' }
-        if (err = rule.validateOf(value) ) { return err}
-        continue
-    }
-    if (rule instanceof Rule)   { 
-        if (!value) { return '{ '+k+' : is required! }' }
-        let err; if (err = rule.validateOf(value,target)) { return err} 
-        continue 
-    }
-        Array.isArray(rule) || (rule = [rule]);
-    let err;
-    for (let current of rule) {
-        if(current == 'required' && !value) { return '{ '+k+' : is required! }' }
-        if(current == 'optional' && !value) { break }
-        if(err = new Rule(current,k).validateOf(value,target) ){return err} }
+        
+        //  Speeding up rule checking
+        //  Rule is INSTANCE of Stigma
+        if (rule instanceof Stigma) {
+            if (value == void 0) { return '{ '+schemakey+' : is required! }' }
+            if (err = rule.validateOf(value)          ) { return err};
+            continue
+        }
+        //  Rule is INSTANCE of Rule
+        if (rule instanceof Rule)   {
+            if (value == void 0) { return '{ '+schemakey+' : is required! }' }
+            if (err = rule.validateOf(value,target)   ) { return err};
+            continue
+        }
+            Array.isArray(rule) || (rule = [rule]);
+        for (let current of rule) {
+            if(current == 'required') {
+                // if no value, then return error message
+                if(value == void 0){ return `{ ${schemakey} : is required! }`}
+                else { continue } // iterate over to the next rule
+            }
+            if(current == 'optional') {
+                if(value == void 0) { break } // if no value present then break
+                else { continue }             // else continue to next rule
+            }
+            if(err = new Rule(current,schemakey).validateOf(value,target) ){return err} }
 
     }
 };
