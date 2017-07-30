@@ -53,6 +53,9 @@ Rule.prototype.validateOf = function (value,target) {
     }
     if (isRegExp(this.rule)     ) { return this.rule.test(this.val) ? void 0 : '{\''+this.prop+'\': \''+this.val+'\'}\r\nfailed against '+this.rule; }
     if (isString(this.rule)     ) {
+    let warn = 'WARNING!: String rules are now deprecated!\r\nUse built-in constructors, like Number, Boolean and Date etc. instead.'
+        console.log(warn);
+        console.log(new Error().stack.slice(10));
         switch (this.rule) {
             case 'boolean'  : return checkOutVal(!isBoolean  (this.val),'boolean' );
             case 'number'   : return checkOutVal(!isNumber   (this.val),'number'  );
@@ -81,10 +84,10 @@ export type Descriptor  <TargetT> = RuleT<TargetT> | SchemaIns<TargetT>;
 export type SchemaSingle<TargetT> = { [K in keyof TargetT] : Descriptor<TargetT>   }
 export type SchemaArray <TargetT> = { [K in keyof TargetT] : Descriptor<TargetT>[] }
 export type SchemaMixed <TargetT> = { [K in keyof TargetT] : Descriptor<TargetT> | Descriptor<TargetT>[] }
-
+export type Schema<TargetT> = SchemaSingle<TargetT> | SchemaArray <TargetT> | SchemaMixed<TargetT>;
 export interface SchemaCon {
-    new <TargetT = any>(obj: SchemaSingle<TargetT> | SchemaArray<TargetT> | SchemaMixed<TargetT>, excessPropertyCheck?: boolean): SchemaIns<TargetT>
-        <TargetT = any>(obj: SchemaSingle<TargetT> | SchemaArray<TargetT> | SchemaMixed<TargetT>, excessPropertyCheck?: boolean): SchemaIns<TargetT>
+    new <TargetT>(schema: Schema<TargetT>, excessPropertyCheck?: boolean): SchemaIns<TargetT>
+        <TargetT>(schema: Schema<TargetT>, excessPropertyCheck?: boolean): SchemaIns<TargetT>
 }
 
 // @param {object}  - Object with description of his types

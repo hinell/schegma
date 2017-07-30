@@ -1,18 +1,18 @@
-import {Stigma, SchemaMixed, SchemaSingle, isNumber} from './stigma';
+import {Stigma, SchemaMixed, SchemaSingle, isNumber, SchemaIns} from './stigma';
 import {ifError, ok, equal} from "assert";
 
     // Classic string rules
 {
     let schema = {
           name      : new Stigma({
-             first   : 'string'
-            ,second  : ['optional','string']
+             first   : String
+            ,second  : ['optional', String]
           })
-        , outdated  : 'boolean'
-        , phone     : 'number'
-        , desc      : ['optional','string']
+        , outdated  : Boolean
+        , phone     : Number
+        , desc      : ['optional',String]
         , itemsID   : [Array,function(value,key){ return value.every(isNumber) ? void 0 : '{ '+key+': array of numbers expected! }'}]
-        , message   : 'string'
+        , message   : String
         , test      : /^\d\d\d-\d\d\d$/g
         , sonne     : 'required'
     } as SchemaMixed<any>;
@@ -53,6 +53,13 @@ import {ifError, ok, equal} from "assert";
         err      = new Stigma({foo: String }).validateOf({foo: 'abcd'       }); ifError(err);
         err      = new Stigma({foo: Date   }).validateOf({foo: new Date()   }); ifError(err);
         err      = new Stigma({foo: Array  }).validateOf({foo: []           }); ifError(err);
+}
+    // Nested schemas
+{
+    let schema: SchemaMixed<{set: {field: string}}> = {set: new Stigma<any>({field: ['string']})}
+    let object    = {set: {field: '1234'} }
+    let err       = new Stigma(schema).validateOf(object)
+        ifError(err)
 }
 
 console.log('All tests passed successfully!');
