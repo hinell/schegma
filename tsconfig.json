@@ -5,7 +5,7 @@
     ,"target"                 : "es5"         // "ES3" (default), "ES5", "ES6"/"ES2015", "ES2016", "ES2017" or "ESNext".
     ,"allowJs"                : true          // Allow JavaScript files to be used during compilation
     ,"importHelpers"          : true          // Import helper-function (e.g. __extends, __rest, etc..) from "tslib" (installed separately)
-    ,"pretty"                 : false         // Stylize errors and messages using color and context
+    ,"pretty"                 : true         // Stylize errors and messages using color and context
     ,"traceResolution"        : false         // Report module resolution log messages.
   //,"moduleResolution      : "Node"        // Determine how modules get resolved. Either "Node" for Node.js/io.js style resolution, or "Classic"
     ,"alwaysStrict"           : false         // Parse in strict mode and emit "use strict" for each source file
