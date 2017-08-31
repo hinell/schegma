@@ -104,7 +104,6 @@ The latest are considered a special ``'words'`` for every of which Stigma keeps 
 Rules like ``'string'``, ``'number'`` or ``'array'`` now are legacy and would be deprecated in the near future.
 <br>You'll be warned if you are using them.
 <br>Use ``String``, ``Number`` or ``Array`` instead like proposed above.
-<br>Currently the code that uses such type keys would be warned by loggin message.
 
 ## STIGMA EXPLAINED
 [e]: #stigma-explained
