@@ -56,10 +56,14 @@ import {ifError, ok, equal} from "assert";
 }
     // Nested schemas
 {
-    let schema: SchemaMixed<{set: {field: string}}> = {set: new Stigma<any>({field: ['string']})}
+    // there is well-known bug with nested stigma types schemas
+    // like one here below where nested new Stigma({field: ... }) schema is
+    // asserted by the <any> assertion to make sure typescript passes type check
+    
+    let schema: SchemaMixed<{set: {field: string}}> = {set: new Stigma<any>({field: [String]})}
     let object    = {set: {field: '1234'} }
     let err       = new Stigma(schema).validateOf(object)
         ifError(err)
 }
 
-console.log('All tests passed successfully!');
+console.log('Tests: ok');

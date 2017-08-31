@@ -1,7 +1,0 @@
-{
-  "name": "stigma",
-  "dependencies": {},
-  "globalDevDependencies": {
-    "node": "registry:dt/node"
-  }
-}

@@ -1,11 +1,11 @@
 {
   "name": "stigma",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "",
   "main": "./index.js",
   "scripts": {
-    "test": "tsc && node --inspect src/test.js ",
-    "postinstall": "typings i && tsc"
+    "test": "tsc && node src/test.js && node src/example.js",
+    "postinstall": "tsc"
   },
   "repository": {
     "type": "git",
@@ -19,6 +19,12 @@
     "assertion",
     "valid"
   ],
+  "files": [
+    "./index.ts",
+    "./tsconfig.json",
+    "./src/stigma.ts",
+    "./README.md"
+  ],
   "author": "Hinell@github.com",
   "license": "MIT",
   "bugs": {
@@ -26,8 +32,8 @@
   },
   "homepage": "https://github.com/hinell/stigma#readme",
   "devDependencies": {
-    "typings": "",
-    "typescript": "^2.2.1"
+    "@types/node": ">=8.0.26",
+    "typescript": ">=2.2.1"
   },
   "dependencies": {
     "tslib": ">=1.7.1"
