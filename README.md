@@ -1,7 +1,7 @@
 <!-- [![Image caption](/project.logo.jpg)](#) -->
 
 # PROJECT
-**[START][gt] | [USAGE][u] | [API][a] | [EXPLAINED][e]| [AUTHOR][c] | [CONTRIBUTE][cpl] | [LICENSE][cpl] | [SUPPORT][ps]**
+**[START][gt] | [USAGE][u] | [API][a] | [EXPLAINED][e]| [AUTHOR][auth] | [CONTRIBUTE][cpl] | [LICENSE][cpl] | [SUPPORT][ps]**
 
 [d]: #project
 
@@ -118,11 +118,11 @@ The main idea behind this module is to address the need of checking the validity
 <br>relieving us from difficulties with type and value checking.
 
 ## AUTHOR
-[c]: #creditscontact-author 'Credits & author\'s contacts info '
+[auth]: #author 'Credits & author\'s contacts info'
 You can follow me on [twitter](https://twitter.com/biteofpie) or just [email](mailto:al.neodim@gmail.com) me.
 
 ## ACKNOWLEDGMENTS
-[acc]: acknowledgments
+[acc]: #acknowledgments
 
 I want to praise the efforts of the people that have inspired me while <br>
 I've been working on this project by briefly mention their names and projects below: <br>
