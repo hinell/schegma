@@ -25,7 +25,7 @@ Is is hard to keep your data consistent throughout a project.
   }
 ```
 Did you spot that mistake out there? Let's see how we could handle this case by Stigma validator and detect the error.
-<br>At first, we cast our schema which is just the shape of our object:
+<br>At first we cast our schema out of the object which serves us as the shape:
 ```typescript
   let userSchema: SchemaMixed<typeof user> = {
        name     :  String
@@ -58,12 +58,12 @@ $ npm i hinell/stigma -S
 [u]: #usage 'Product usage'
 
 ```typescript
-  let dataStructure = {_id: ..., description: 'Something firing up....'}
   let schema        = {_id: ..., description: String } // String here is a rule for checking
+  let dataStructure = {_id: ..., description: 'Something firing up....'}
   let validator     = new Stigma(schema)
   let error         = validator.validateOf(dataStructure)
 ```
-### Exampe of adding new validator
+### Example of creating function rule
 Let's assume we want to add ``_id`` field validation, but how we do this?
 <br>Just let's flavour our schema. Add one function that checks ID class and returns a string message that would be an error later:
 ```typescript
@@ -77,26 +77,55 @@ Let's assume we want to add ``_id`` field validation, but how we do this?
       })
 ```
 
+### Example of combined rules
+Schema below contains two rules: ``String`` and ``(val, key) => ...``
+```typescript
+let schema    = { key: [
+      'required' // make sure we have a "key" present in the somedata and 
+    , String     // that its type is string and it is no more than six chars long
+    , (val,key) => val.length < 6 ? 'Incorrect value length' : void 0
+    ]};
+let somedata  = {key: 'keyvalue'};
+let validator = new Stigma(schema);
+let error     = validator.validateOf(somedata);
+                validator.validateOf(error => ... ) // error if "key" isn't of string type
+```
 
 ## API
 [a]: #api 'Module\'s API description'
 #### WARNING!: This api is subject to change! Make sure you know what you're doing!
 
-```typescript
-let schema    = {key: String}; 
-let somedata  = {key: 'keyvalue'};
-let validator = new Stigma(schema);
-let error     = validator.validateOf(someObject);
-                validator.validateOf(error => ... )
-```
-Where ``String`` in the ``{key: String}`` is called a Rule. Possible rules are the following:
-```typescript
-function(value, field): String | Error
-Function | Number| String| Boolean| Array| Date
+```ts 
+stigmaIns = new Stigma(schema: schema [, excessPropertyCheck: boolean = true]): stigmaIns
+stigmaIns.validateOf(target: object[, cb: function (err) {...} ]): String | Error
 ```
 
-The latest are considered a special ``'words'`` for every of which Stigma keeps special validator. 
-<br>Check out the [Stigma](./src/stigma.ts#L1) source code for more details.
+The each ``schema``'s key contains a built-in constructor like ``String`` that is called the ``Rule``.
+<br>Possible rules are the following:
+
+```typescript
+schema: { ... : Rule | Rule[]}
+Rule: Number | String | Boolean | Array | Date | RegExp
+```
+
+Stigma is provided with several built-in rule validators that can be used by the schema
+<br>by specifying JS built-in constructors as rules. The all validators are just functions that check out
+<br>the if target's key value is having a particular type. If it finds out that the type of the schema
+<br>and target one are incompatible it returns an error. The error is simple string.
+<br>You can create your own validator by using simple function. The rule validators can be combined into array infinitely.
+<br>Custom rule validators are restricted to return only String and Error objects.
+
+```typescript
+Rule: 'optional' | 'required' | function(value, propertyname): String | Error
+```
+The former two strings are special validators and used to tell the stigma to treat some 
+<br>properties of the target object in the following way:
+<br>if schema has a key set to the ``'optional'`` value then validator
+<br>treats this key in targets's object as optional one and returns no error if it is missing
+<br>and otherwise if ``'required'`` is present.
+
+
+<br>Check out the [Stigma.ts](./src/stigma.ts#L1) source code for more details.
 
 ### CHANGES
 ### Since API 1.0
