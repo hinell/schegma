@@ -6,14 +6,14 @@
 [d]: #project
 
 Stigma is fast and powerful dynamic JavaScript schema validator. It can be used in Node.js and in all modern browsers.
-<br> Results of testing in old browsers haven't been established yet. 
+<br> Old browsers support is in progress.
 
 # THE PROBLEM
-Is is hard to keep your data consistent throughout a project.
-<br>You need to routinely check it to make it sure it didn't get wrong during runtime while user types in.
+It is hard to keep your data consistent throughout a project.
+<br>You need to routinely check it to make sure it didn't get wrong during runtime while user types in.
 <br>If we do it manually by ``if/then`` statements at some point it is becomes messy very quickly.
-<br>The Stigma simplifies this way allowing us to specify the schema that would 
-<br>validate data against every time it gets changed so that solving the problem easily.
+<br>The Stigma replaces that checking routine by allowing us to create a schema that  
+<br>simplifies data validation very efficiently. Let's start with example:
 
 <br>Imagine user have made a mistake inside the mail field and then we get this data model:
 ```typescript
@@ -24,7 +24,7 @@ Is is hard to keep your data consistent throughout a project.
       , email : 'JakeTheDog$example.com'
   }
 ```
-Did you spot that mistake out there? Let's see how we could handle this case by Stigma validator and detect the error.
+Did you spot that mistake out there? Let's see how we could solve this case by utilizing Stigma validator that detects error.
 <br>At first we cast our schema out of the object which serves us as the shape:
 ```typescript
   let userSchema: SchemaMixed<typeof user> = {
@@ -34,12 +34,12 @@ Did you spot that mistake out there? Let's see how we could handle this case by 
   }
 ```
 
-Now creating our user validator and validate it:
+Then we create our user validator and validating its model getting error:
 ```typescript
   let validator = new Stigma(userSchema)
   let error     = validator.validateOf(user) // => Invalid email!
 ```
-To see whole example follow [here](/example.ts)
+Find more by following this full example [here](/example.ts)
 
 ## GETTING STARTED
 [gt]: #getting-started 'Getting started guide'
