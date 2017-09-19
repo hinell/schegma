@@ -99,11 +99,11 @@ Stigma: SchemaCon = function (schemaDescriptor,excessiveProps = true) {
 } as any;
 Stigma.prototype.constructor = Stigma
 Stigma.prototype._validateOf = function (target) {
-    if(isString(target)) { return 'validateOf() - Invalid argument: object is expected' }
+    if(isString(target)) { return new Error('validateOf() - Invalid argument: object is expected') }
     let skeys       = Object.keys(this.schema_);    // keys of schema object provided by new constructor(schema)
     let tkeys       = Object.keys(target);          // keys of target object provided by validateOf(target)
-    if (!skeys.length) { return 'Invalid schema: schema object requires at least one prop'          }
-    if (!tkeys.length) { return 'validateOf() - Invalid argument: [ '+skeys+' ] properties are required' }
+    if (!skeys.length) { return new Error('Invalid schema: schema object requires at least one prop')          }
+    if (!tkeys.length) { return new Error('validateOf() - Invalid argument: [ '+skeys+' ] properties are required') }
     if (this.excessiveProps) {
         let excessprops = [];
         toploop:
@@ -114,8 +114,11 @@ Stigma.prototype._validateOf = function (target) {
             excessprops.includes(targetkey) || (excessprops.push(targetkey))
         }
         if (excessprops.length) {
-            return 'Invalid target object: all these properties are excessive\r\n> '+excessprops.join('\r\n> ')+'\r\n'
-                +'\r\n\r\nTry to use excessiveProps option in the new Stigma constructor to bypass this error.'
+        let err = [
+            'Invalid target object: all these properties are excessive\r\n> '
+            ,excessprops.join('\r\n> ')+'\r\n'
+            ,'\r\n\r\nTry to use excessiveProps option in the new Stigma constructor to bypass this error.'].join('');
+            return new Error(err)
         }
     }
 
@@ -127,13 +130,13 @@ Stigma.prototype._validateOf = function (target) {
         //  Speeding up rule checking
         //  Rule is INSTANCE of Stigma
         if (rule instanceof Stigma) {
-            if (value == void 0) { return '{ '+schemakey+' : is required! }' }
+            if (value == void 0) { return new Error('{ '+schemakey+' : is required! }') }
             if (err = rule.validateOf(value)          ) { return err};
             continue
         }
         //  Rule is INSTANCE of Rule
         if (rule instanceof Rule)   {
-            if (value == void 0) { return '{ '+schemakey+' : is required! }' }
+            if (value == void 0) { return new Error('{ '+schemakey+' : is required! }') }
             if (err = rule.validateOf(value,target)   ) { return err};
             continue
         }
@@ -141,7 +144,7 @@ Stigma.prototype._validateOf = function (target) {
         for (let current of rule) {
             if(current == 'required') {
                 // if no value, then return error message
-                if(value == void 0){ return `{ ${schemakey} : is required! }`}
+                if(value == void 0){ return new Error(`{ ${schemakey} : is required! }`)}
                 else { continue } // iterate over to the next rule
             }
             if(current == 'optional') {
