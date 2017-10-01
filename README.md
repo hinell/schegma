@@ -9,11 +9,14 @@ Stigma is fast and powerful dynamic JavaScript schema validator. It can be used 
 <br> Old browsers support is in progress.
 
 # THE PROBLEM
-It is hard to keep your data consistent throughout a project.
-<br>You need to routinely check it to make sure it didn't get wrong during runtime while user types in.
+It is very tedious to keep your data consistent across a project.
+<br>You need to routinely check it out to make sure it didn't get wrong during runtime while user types in.
 <br>If we do it manually by ``if/then`` statements at some point it is becomes messy very quickly.
-<br>The Stigma replaces that checking routine by allowing us to create a schema that  
-<br>simplifies data validation very efficiently. Let's start with example:
+<br>That's where ``Stigma`` comes to play.
+
+# THE SOLUTION
+<br>The Stigma replaces that checking routine by allowing us to create a schema (set of constraints) that  
+<br>simplifies data validation very efficiently. Here is quick example:
 
 <br>Imagine user have made a mistake inside the mail field and then we get this data model:
 ```typescript
@@ -113,7 +116,7 @@ Stigma is provided with several built-in rule validators that can be used by the
 <br>the if target's key value is having a particular type. If it finds out that the type of the schema
 <br>and target one are incompatible it returns an error. The error is simple string.
 <br>You can create your own validator by using simple function. The rule validators can be combined into array infinitely.
-<br>Custom rule validators are restricted to return only String and Error objects.
+<br>Custom rule validators are restricted to return ``String`` and ``Error`` only.
 
 ```typescript
 Rule: 'optional' | 'required' | function(value, propertyname): String | Error

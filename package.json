@@ -5,6 +5,7 @@
   "main": "./index.js",
   "scripts": {
     "test": "tsc && node src/test.js && node src/example.js",
+    "test.inspect": "tsc && node --inspect-brk src/test.js && node src/example.js ",
     "postinstall": "tsc"
   },
   "repository": {
