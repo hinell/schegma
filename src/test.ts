@@ -1,24 +1,20 @@
 import {Stigma, SchemaMixed, SchemaSingle, isNumber, SchemaIns} from './stigma';
 import {ifError, ok, equal} from "assert";
 
-    // Classic string rules
 {
     let schema = {
-          name      : new Stigma({
-             first   : String
-            ,second  : ['optional', String]
-          })
+          name      : String
         , outdated  : Boolean
         , phone     : Number
         , desc      : ['optional',String]
-        , itemsID   : [Array,function(value,key){ return value.every(isNumber) ? void 0 : '{ '+key+': array of numbers expected! }'}]
+        , itemsID   : [Array,function(value,key){ return value.every(isNumber) ? void 0 : '{ '+key+': array of numbers is expected! }'}]
         , message   : String
         , test      : /^\d\d\d-\d\d\d$/g
         , sonne     : 'required'
     } as SchemaMixed<any>;
     
     let target = {
-          name      : {first: '1234', second:  '1234'}
+          name      : 'Father of god'
         , phone     : 9998887766
         , outdated  : true
         , desc      : null // missing - validateOf() has to return no errors here
@@ -27,34 +23,31 @@ import {ifError, ok, equal} from "assert";
         , test      : '333-444'
         , sonne     : 'ok, it is here'
         };
-    let err: any = new Stigma(schema).validateOf(target);
+    let err: any = new Stigma(schema).validateOf(target, true);
+        debugger
         ifError(err);
+        console.log('passed: classic string rules')
 }
-
 {
-    let err: any = new Stigma({name: String}).validateOf({name: 1});
-        equal(!!err, true, err);
-}
-    // Nested rules test
-{
-    let schema = new Stigma({foo: new Stigma({bar: String})});
+    let schema = new Stigma({foo: {bar: String} });
 
-
+  
     [true, 999, {}, new RegExp('.*')].forEach(function (el) {
-        let err: any = schema.validateOf({foo: {bar: el}})
+        let err: any = schema.validateOf({foo: {bar: el}}, true)
         ok(err, err)
+        console.log(`passed: ${el.toString()}`)
         return err
     });
+    console.log('passed: nested rules test');
 }
-    // New native rules declarations (by respective constructors)
 {
-    let err: any = new Stigma({foo: Boolean}).validateOf({foo: true         }); ifError(err);
-        err      = new Stigma({foo: Number }).validateOf({foo: 1234         }); ifError(err);
-        err      = new Stigma({foo: String }).validateOf({foo: 'abcd'       }); ifError(err);
-        err      = new Stigma({foo: Date   }).validateOf({foo: new Date()   }); ifError(err);
-        err      = new Stigma({foo: Array  }).validateOf({foo: []           }); ifError(err);
+    let err: any = new Stigma({foo: Boolean}).validateOf({foo: true         }, true); ifError(err);
+        err      = new Stigma({foo: Number }).validateOf({foo: 1234         }, true); ifError(err);
+        err      = new Stigma({foo: String }).validateOf({foo: 'abcd'       }, true); ifError(err);
+        err      = new Stigma({foo: Date   }).validateOf({foo: new Date()   }, true); ifError(err);
+        err      = new Stigma({foo: Array  }).validateOf({foo: []           }, true); ifError(err);
+        console.log('passed: new native rules declarations (by respective constructors)');
 }
-    // Nested schemas
 {
     // there is well-known bug with nested stigma types schemas
     // like one here below where nested new Stigma({field: ... }) schema is
@@ -62,8 +55,18 @@ import {ifError, ok, equal} from "assert";
     
     let schema: SchemaMixed<{set: {field: string}}> = {set: new Stigma<any>({field: [String]})}
     let object    = {set: {field: '1234'} }
-    let err       = new Stigma(schema).validateOf(object)
-        ifError(err)
+    let err       = new Stigma(schema).validateOf(object, true)
+        ifError(err);
+        console.log('passed: nested schemas');
 }
-
-console.log('Tests: ok');
+{
+  
+    Promise.all([
+      new Stigma({ foo: String }).validateOf({ foo: 'ok' }),
+      new Stigma({ foo: String }).validateOf({ foo: new Error() }).catch(err => err)
+    ])
+    .then(function ([,err]){
+      ok(err instanceof Error);
+      console.log('passed: promised valueOf');
+    },err => console.log(err))
+}

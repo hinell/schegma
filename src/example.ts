@@ -12,7 +12,9 @@ let userSchema: SchemaMixed<typeof user> = {
   ,email    : [String,(value, key) => value.includes('@') ? null : 'Invalid email! ']
 }
 
-let validator = new Stigma(userSchema)
-let error     = validator.validateOf(user) // => Error: Invalid email!
-    assert.ok(error)
-    console.log('Example: ok')
+new Stigma(userSchema)
+  .validateOf(user)
+  .then(
+      function (object){ throw new Error('Invalid testing: validation should fail at email property value') }
+    , function (err){ assert.ok(err); console.log('passed: example')})
+  .catch(err => console.log(err) )

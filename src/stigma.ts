@@ -27,18 +27,18 @@ export interface RuleCon<TargetT> {
 // @param {RegExp|function|Rule| Array<any>} Test - Test object
 // @param {string} Property name
 export const
-Rule: RuleCon<any> = function (rule,prop) {
+Rule: RuleCon<any> = <any> function (rule,prop) {
     if (!rule) { throw new Error('Invalid rule: function, string, regExp or Rule instance is expected!')}
     if (rule instanceof Rule) {return rule}
     this.rule  = rule;
     this.prop  = prop;
-} as any
+}
 Rule.prototype.validateOf = function (value,target) {
     if (!target) {throw new Error('Invalid argument: target object is required!')}
     this.val = value;
     let checkOutVal = function (conresultOfCodition,message){
         if(conresultOfCodition == true) {
-            return  `Invalid object: { ${this.prop} : must be of ${message} type } `
+            return   new Error(`Invalid object type: { ${this.prop} : must be of ${message} type } `)
         }
     }.bind(this)
     if (isFunction(this.rule)   ) {
@@ -76,8 +76,8 @@ export const isFunction = function (v) { return v instanceof Function           
 export const isRegExp   = function (v) { return v instanceof RegExp                 };
 
 export interface SchemaIns<TargetT> {
-    validateOf(target: TargetT & object): ValidationError
-    validateOf(target: TargetT & object,cb: (err: ValidationError) => void ): void
+    validateOf(target: TargetT & object): Promise<TargetT>
+    validateOf(target: TargetT & object, sync: true ): ValidationError
 }
 
 export type Descriptor  <TargetT> = RuleT<TargetT> | SchemaIns<TargetT>;
@@ -93,12 +93,19 @@ export interface SchemaCon {
 // @param {object}  - Object with description of his types
 // @param {boolean} - If true then doesn't check excessive properties
 export const
-Stigma: SchemaCon = function (schemaDescriptor,excessiveProps = true) {
-    this.excessiveProps = excessiveProps;   // true by default
-    this.schema_        = schemaDescriptor;
+Stigma: SchemaCon            = function (schemaDescriptor,excessiveProps = true) {
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty
+    Object.defineProperties(this,{
+          'excessiveProps' : {configurable: true, writable: true, enumerable: false, value: excessiveProps}
+        , 'schema_'        : {configurable: true, writable: true, enumerable: false, value: schemaDescriptor}
+      }
+    )
+
 } as any;
-Stigma.prototype.constructor = Stigma
-Stigma.prototype._validateOf = function (target) {
+
+Stigma.prototype.constructor = Stigma;
+
+let stigmaValidate = function (target,sync) {
     if(isString(target)) { return new Error('validateOf() - Invalid argument: object is expected') }
     let skeys       = Object.keys(this.schema_);    // keys of schema object provided by new constructor(schema)
     let tkeys       = Object.keys(target);          // keys of target object provided by validateOf(target)
@@ -131,7 +138,7 @@ Stigma.prototype._validateOf = function (target) {
         //  Rule is INSTANCE of Stigma
         if (rule instanceof Stigma) {
             if (value == void 0) { return new Error('{ '+schemakey+' : is required! }') }
-            if (err = rule.validateOf(value)          ) { return err};
+            if (err = rule.validateOf(value,sync)       ) { return err};
             continue
         }
         //  Rule is INSTANCE of Rule
@@ -154,11 +161,14 @@ Stigma.prototype._validateOf = function (target) {
             if(err = new Rule(current,schemakey).validateOf(value,target) ){return err} }
 
     }
-};
+}
 
 // @param {object} - object to compare schema against
 // @callback - optional
-Stigma.prototype.validateOf = function (target,cb) {
-    let err = this._validateOf(target);
-    if (cb) { err ? cb(err) : cb() } else {return err }
+export const TARGET_IS_MISSING = new Error('Stigma validator: Invalid argument: target is missing!');
+Stigma.prototype.validateOf = function (target,sync) {
+    if(target === undefined){ throw TARGET_IS_MISSING  }
+    let err = stigmaValidate.call(this,target,sync);
+    if(sync){ return err }
+    return err === undefined ? Promise.resolve(target) : Promise.reject(err)
 };
