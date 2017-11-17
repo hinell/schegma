@@ -1,52 +1,44 @@
 <!-- [![Image caption](/project.logo.jpg)](#) -->
 
-# PROJECT
-**[START][gt] | [USAGE][u] | [API][a] | [EXPLAINED][e]| [AUTHOR][auth] | [CONTRIBUTE][cpl] | [LICENSE][cpl] | [SUPPORT][ps]**
+# STIGMA
+[d]: #stigma
 
-[d]: #project
+**[START][gt] | [USAGE][u] | [API][a] | [EXAMPLES][exmp] | [AUTHOR][auth] | [CONTRIBUTE][cpl] | [LICENSE][cpl] | [SUPPORT][ps]**
 
-Stigma is fast and powerful dynamic JavaScript schema validator. It can be used in Node.js and in all modern browsers.
-<br> Old browsers support is in progress.
+[exmp]: api.md#examples
+[a]: api.md
 
-# THE PROBLEM
-It is very tedious to keep your data consistent across a project.
-<br>You need to routinely check it out to make sure it didn't get wrong during runtime while user types in.
-<br>If we do it manually by ``if/then`` statements at some point it is becomes messy very quickly.
-<br>That's where ``Stigma`` comes to play.
+> Declarative JavaScript and TypeScript schema validation tool.
 
-# THE SOLUTION
-<br>The Stigma replaces that checking routine by allowing us to create a schema (set of constraints) that  
-<br>simplifies data validation very efficiently. Here is quick example:
-
-<br>Imagine user have made a mistake inside the mail field and then we get this data model:
 ```typescript
-  import {SchemaMixed, Stigma} from './stigma'
-  let user = {
-        name  : 'Jake'
-      , friend: 'Finn'
-      , email : 'JakeTheDog$example.com'
-  }
-```
-Did you spot that mistake out there? Let's see how we could solve this case by utilizing Stigma validator that detects error.
-<br>At first we cast our schema out of the object which serves us as the shape:
-```typescript
-  let userSchema: SchemaMixed<typeof user> = {
-       name     :  String
-      ,friend   :  function (value){ value == 'Finn' ?  null : 'Finn the only best friend!'}
-      ,email    : [String,(value, key) => value.includes('@') ? null : 'Invalid email! ']
-  }
+new Stigma({
+    name      : [String, min(4)]
+  , password  : [String, min(6)]
+  , email     : [String, (string) => /@/g.test(string) || '@ is missing!' ]
+  , biography : ['optional', String, min(32), max(512)]
+  , birthDate : ['optional', Date]
+  , code      : ['optional', Number]
+}).validate({
+    name      : 'Ragnarök'
+  , password  : '12345qwerty'
+  , email     : 'what?'
+},true); // => '@ is missing!'
+
 ```
 
-Then we create our user validator and validating its model getting error:
-```typescript
-  let validator = new Stigma(userSchema)
-  let error     = validator.validateOf(user) // => Invalid email!
-```
-Find more by following this full example [here](/example.ts)
+# MOTIVATION
+The well-know difficulties of maintaining data consistent throughout the project is the main source of motivation.
+
+### ALTERNATIVES
+**Q:** Why don't to use joi or any other schema-validation library instead?
+<br>**A:** Well the reason of this is that some of these libraries
+<br>are too complicated and time-expensive to learn for me.
+<br>The Stigma was created as ad-hoc solution and isn't intended 
+<br>to be replacement for any of these useful librariess.
+<br>You are free to use any you like.
 
 ## GETTING STARTED
 [gt]: #getting-started 'Getting started guide'
-### REQUIREMENTS
 [rq]: #requirements
 Before you start make sure you have NodeJS installed and available in your global ``PATH`` variable.
 
@@ -55,123 +47,35 @@ Before you start make sure you have NodeJS installed and available in your globa
 
 ```shell
 $ cd your/project/path
-$ npm i hinell/stigma -S
+$ npm i -S hinell/stigma 
 ```
-## USAGE
+### USAGE
 [u]: #usage 'Product usage'
 
 ```typescript
-  let schema        = {_id: ..., description: String } // String here is a rule for checking
-  let dataStructure = {_id: ..., description: 'Something firing up....'}
-  let validator     = new Stigma(schema)
-  let error         = validator.validateOf(dataStructure)
+  import {Stigma} from 'stigma';
+  let schema        = {description: String }
+  let dataStructure = {description: 'Description of most powerful library ever....'};
+  let error         =  new Stigma(schema).validate(dataStructure,true);
+  //  do something with error
 ```
-### Example of creating function rule
-Let's assume we want to add ``_id`` field validation, but how we do this?
-<br>Just let's flavour our schema. Add one function that checks ID class and returns a string message that would be an error later:
-```typescript
-  let schema        = {_id (value){
-    return (value instanceof SomeIDClass) ? null : 'IDClass instance expected!'
-  }}
-  let validator     = new Stigma(schema)
-      validator.validateOf(dataScturcture,function (error){
-        if(error) ... 
-        ok(dataScturcture)
-      })
-```
-
-### Example of combined rules
-Schema below contains two rules: ``String`` and ``(val, key) => ...``
-```typescript
-let schema    = { key: [
-      'required' // make sure we have a "key" present in the somedata and 
-    , String     // that its type is string and it is no more than six chars long
-    , (val,key) => val.length < 6 ? 'Incorrect value length' : void 0
-    ]};
-let somedata  = {key: 'keyvalue'};
-let validator = new Stigma(schema);
-let error     = validator.validateOf(somedata);
-                validator.validateOf(error => ... ) // error if "key" isn't of string type
-```
-
-## API
-[a]: #api 'Module\'s API description'
-#### WARNING!: This api is subject to change! Make sure you know what you're doing!
-
-```ts 
-stigmaIns = new Stigma(schema: schema [, excessPropertyCheck: boolean = true]): stigmaIns
-stigmaIns.validateOf(target: object[, cb: function (err) {...} ]): String | Error
-```
-
-The each ``schema``'s key contains a built-in constructor like ``String`` that is called the ``Rule``.
-<br>Possible rules are the following:
-
-```typescript
-schema: { ... : Rule | Rule[]}
-Rule: Number | String | Boolean | Array | Date | RegExp
-```
-
-Stigma is provided with several built-in rule validators that can be used by the schema
-<br>by specifying JS built-in constructors as rules. The all validators are just functions that check out
-<br>the if target's key value is having a particular type. If it finds out that the type of the schema
-<br>and target one are incompatible it returns an error. The error is simple string.
-<br>You can create your own validator by using simple function. The rule validators can be combined into array infinitely.
-<br>Custom rule validators are restricted to return ``String`` and ``Error`` only.
-
-```typescript
-Rule: 'optional' | 'required' | function(value, propertyname): String | Error
-```
-The former two strings are special validators and used to tell the stigma to treat some 
-<br>properties of the target object in the following way:
-<br>if schema has a key set to the ``'optional'`` value then validator
-<br>treats this key in targets's object as optional one and returns no error if it is missing
-<br>and otherwise if ``'required'`` is present.
-
-
-<br>Check out the [Stigma.ts](./src/stigma.ts#L1) source code for more details.
-
-### CHANGES
-### Since API 1.0
-#### Schema: Rules ('string','number' etc.)
-Rules like ``'string'``, ``'number'`` or ``'array'`` now are legacy and would be deprecated in the near future.
-<br>You'll be warned if you are using them.
-<br>Use ``String``, ``Number`` or ``Array`` instead like proposed above.
-
-## STIGMA EXPLAINED
-[e]: #stigma-explained
-The main idea behind this module is to address the need of checking the validity of some ``data``
-<br>structure (key-value storage) by means of schema ``validation``.
-<br>The ``schema`` is just a shape (JSON or just JS object) which we *cast* out from existing data instance
-<br>by specifying each key with type checker 
-<br>(there are several built-in that can be called in by passing js constructor name like ``Number``)
-<br>corresponding to keys of ``data`` instance.
-<br>Then using validator created by **Stigma** from casted schemas we can validate our data
-<br>relieving us from difficulties with type and value checking.
-
 ## AUTHOR
 [auth]: #author 'Credits & author\'s contacts info'
 You can follow me on [twitter](https://twitter.com/biteofpie) or just [email](mailto:al.neodim@gmail.com) me.
 
-## ACKNOWLEDGMENTS
-[acc]: #acknowledgments
-
-I want to praise the efforts of the people that have inspired me while <br>
-I've been working on this project by briefly mention their names and projects below: <br>
-...list of projects will be here soon.
-
 ## CONTRIBUTION & LICENSE
 [cpl]:#contribution--license 'Contribution guide & license info'
 
-Check out (if any) <a href='/CONTRIBUTION'>contribution guide</a> or <a href='/LICENSE'>license</a> for more details.
+Check out (if any) [contribution guide](CONTRIBUTION) or [license](LICENSE) for more details.
 
 ## PRODUCTION STATUS & SUPPORT
 [ps]: #production-status--support 'Production use disclaimer & support info'
 
-As everything is changnign all the time the production readiness of this project and its future development are
-in permanent question unless it is stated otherwise.
-Use of this product is entirely on your own risk. *Nobody (including me) guarantees that there is no bugs present in the code.*
-I dont' have much time to eliminate them all but hardly trying to minimize them.
+You should be aware that the library is not supported by anyone except me.
+<br>None gurantees bugless behaviour (though currenlty it is fully covered by tests). 
 
-If you want to **help** me or offer a **job** please follow [here][c].
+If you want to become a **patron** of this project or offer me a **support** please [follow here][auth].
+
+<hr>
 
 Go back to the **[project description][d]**

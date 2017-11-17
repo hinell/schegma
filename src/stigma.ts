@@ -1,71 +1,52 @@
-﻿export type ValidationError = Error | string | void;
+﻿/*
+MIT License
+
+Copyright (c) 2017 By Alexander Davronov (Aristov)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
+
+export type ValidationError = Error | string | void;
 // Here we have an interesting bug with literals
 // see more here: https://github.com/Microsoft/TypeScript/pull/10676#issuecomment-244255103
-export type RuleT<TargetT> =
-    {(this: TargetT, val:any, prop: string): ValidationError}
-    | 'required'
-    | 'optional'
-    | 'array'
-    | 'number'
-    | 'string'
-    | 'boolean'
-    | 'date'
-    | FunctionConstructor
-    | NumberConstructor
-    | StringConstructor
-    | BooleanConstructor
-    | ArrayConstructor
-    | DateConstructor
-    | RuleIns | RegExp
+export type RuleT<T> =
+  {(this: T, val:any, prop: string): ValidationError}
+  | 'required'
+  | 'optional'
+  | 'string'
+  | 'array'
+  | 'number'
+  | 'boolean'
+  | 'date'
+  | FunctionConstructor
+  | NumberConstructor
+  | StringConstructor
+  | BooleanConstructor
+  | ArrayConstructor
+  | DateConstructor
+  | Rule | RegExp
 
-export interface RuleIns {validateOf: (value: any, targetObj: object) => ValidationError }
-// TODO: Simplify constructor. Remove property
-export interface RuleCon<TargetT> {
-    new (rule: RuleT<TargetT>, property?: string): RuleIns
-        (rule: RuleT<TargetT>, property?: string): RuleIns
-}
-// @param {RegExp|function|Rule| Array<any>} Test - Test object
-// @param {string} Property name
-export const
-Rule: RuleCon<any> = <any> function (rule,prop) {
-    if (!rule) { throw new Error('Invalid rule: function, string, regExp or Rule instance is expected!')}
-    if (rule instanceof Rule) {return rule}
-    this.rule  = rule;
-    this.prop  = prop;
-}
-Rule.prototype.validateOf = function (value,target) {
-    if (!target) {throw new Error('Invalid argument: target object is required!')}
-    this.val = value;
-    let checkOutVal = function (conresultOfCodition,message){
-        if(conresultOfCodition == true) {
-            return   new Error(`Invalid object type: { ${this.prop} : must be of ${message} type } `)
-        }
-    }.bind(this)
-    if (isFunction(this.rule)   ) {
-        switch (this.rule) {
-            case Boolean  : return checkOutVal(!isBoolean  (this.val),'boolean' );
-            case Number   : return checkOutVal(!isNumber   (this.val),'number'  );
-            case String   : return checkOutVal(!isString   (this.val),'string'  );
-            case Date     : return checkOutVal(!isDate     (this.val),'date'    );
-            case Array    : return checkOutVal(!isArray    (this.val),'array'   );
-            default       : return this.rule.call(target,this.val,this.prop)
-        }
-    }
-    if (isRegExp(this.rule)     ) { return this.rule.test(this.val) ? void 0 : '{\''+this.prop+'\': \''+this.val+'\'}\r\nfailed against '+this.rule; }
-    if (isString(this.rule)     ) {
-    let warn = 'WARNING!: String rules are now deprecated!\r\nUse built-in constructors, like Number, Boolean and Date etc. instead.'
-        console.log(warn);
-        console.log(new Error().stack.slice(10));
-        switch (this.rule) {
-            case 'boolean'  : return checkOutVal(!isBoolean  (this.val),'boolean' );
-            case 'number'   : return checkOutVal(!isNumber   (this.val),'number'  );
-            case 'string'   : return checkOutVal(!isString   (this.val),'string'  );
-            case 'date'     : return checkOutVal(!isDate     (this.val),'date'    );
-            case 'array'    : return checkOutVal(!isArray    (this.val),'array'   );
-        }
-    }
-    return `Error: Invalid rule!:  { '${this.prop}' :  ${this.rule} } `
-}
+export type Descriptor  <TargetT> = RuleT<TargetT> | Rules<TargetT>;
+export type SchemaSingle<TargetT> = { [K in keyof TargetT] : Descriptor<TargetT>   }
+export type SchemaArray <TargetT> = { [K in keyof TargetT] : Descriptor<TargetT>[] }
+export type SchemaMixed <TargetT> = { [K in keyof TargetT] : Descriptor<TargetT> | Descriptor<TargetT>[] }
+export type Schema<TargetT> = object & (SchemaSingle<TargetT> | SchemaArray <TargetT> | SchemaMixed<TargetT>);
 
 export const isBoolean  = function (v) { return typeof v === 'boolean'              };
 export const isNumber   = function (v) { return typeof v === 'number'               };
@@ -74,101 +55,184 @@ export const isDate     = function (v) { return v instanceof Date               
 export const isArray    = function (v) { return v instanceof Array                  };
 export const isFunction = function (v) { return v instanceof Function               };
 export const isRegExp   = function (v) { return v instanceof RegExp                 };
-
-export interface SchemaIns<TargetT> {
-    validateOf(target: TargetT & object): Promise<TargetT>
-    validateOf(target: TargetT & object, sync: true ): ValidationError
+export const isObject   = function (v) { return v && v.constructor === Object.prototype.constructor};
+export const min        = function (n = 1) {
+  return function (v){
+    let err, l;
+    if(isNumber(v)){
+      err = `The number is below the limit set to ${n}`;
+      l = v;
+    } else {
+      err = `At least ${n} characters are required`;
+      l = v.length
+    }
+    return (l < n) && new Error(err)
+  }
+}
+export const max        = function (n = 1) {
+  return function (v){
+    let err, l;
+    if(isNumber(v)){
+      err = `The number is above the limit set to ${n}`;
+      l = v;
+    } else {
+      err = `No more than ${n} characters are expected`;
+      l = v.length
+    }
+    
+    return (l > n) && new Error(err)
+  }
 }
 
-export type Descriptor  <TargetT> = RuleT<TargetT> | SchemaIns<TargetT>;
-export type SchemaSingle<TargetT> = { [K in keyof TargetT] : Descriptor<TargetT>   }
-export type SchemaArray <TargetT> = { [K in keyof TargetT] : Descriptor<TargetT>[] }
-export type SchemaMixed <TargetT> = { [K in keyof TargetT] : Descriptor<TargetT> | Descriptor<TargetT>[] }
-export type Schema<TargetT> = SchemaSingle<TargetT> | SchemaArray <TargetT> | SchemaMixed<TargetT>;
-export interface SchemaCon {
-    new <TargetT>(schema: Schema<TargetT>, excessPropertyCheck?: boolean): SchemaIns<TargetT>
-        <TargetT>(schema: Schema<TargetT>, excessPropertyCheck?: boolean): SchemaIns<TargetT>
-}
 
-// @param {object}  - Object with description of his types
-// @param {boolean} - If true then doesn't check excessive properties
-export const
-Stigma: SchemaCon            = function (schemaDescriptor,excessiveProps = true) {
-    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/defineProperty
-    Object.defineProperties(this,{
-          'excessiveProps' : {configurable: true, writable: true, enumerable: false, value: excessiveProps}
-        , 'schema_'        : {configurable: true, writable: true, enumerable: false, value: schemaDescriptor}
-      }
-    )
-
-} as any;
-
-Stigma.prototype.constructor = Stigma;
-
-let stigmaValidate = function (target,sync) {
-    if(isString(target)) { return new Error('validateOf() - Invalid argument: object is expected') }
-    let skeys       = Object.keys(this.schema_);    // keys of schema object provided by new constructor(schema)
-    let tkeys       = Object.keys(target);          // keys of target object provided by validateOf(target)
-    if (!skeys.length) { return new Error('Invalid schema: schema object requires at least one prop')          }
-    if (!tkeys.length) { return new Error('validateOf() - Invalid argument: [ '+skeys+' ] properties are required') }
-    if (this.excessiveProps) {
-        let excessprops = [];
-        toploop:
-        for (let targetkey of tkeys) {
-        for (let schemakey of skeys) {
-            if(targetkey === schemakey) {continue toploop}
+export class Rule<T = any> {
+  static INVALID_RULE = new TypeError('Invalid argument: function, string, regExp or Rule instance is expected!');
+  rule: any;
+  value: any;
+  prop: string;
+  constructor(rule: RuleT<T>, prop) {
+    if (!rule) { throw Rule.INVALID_RULE }
+    if (rule instanceof Rule) {return rule}
+    this.rule  = rule;
+    this.prop  = prop;
+  }
+  
+  static INVALID_VALUE = new Error('Invalid value:\nvalue of the "%s" is expected to be a "%s1"');
+  
+  validateOf(target,sync?){ return this.validate.apply(this,arguments)  }
+  validate(value,sync,targetObj?,verbose?) {
+    this.value      = value;
+    let checkOutVal = function (conresultOfCodition,m?){
+        if(conresultOfCodition === true) {
+          let err:any = Rule.INVALID_VALUE;
+          if (verbose) {
+            err.message = err.message
+              .replace('%s', this.prop)
+              .replace('%s1', JSON.stringify(this.rule, null, '\t') || m)
+            if (targetObj) { err.message += '\n' + JSON.stringify(targetObj, null, '\t').substr(0, 256) + '\n'; }
+          }
+              return err
         }
-            excessprops.includes(targetkey) || (excessprops.push(targetkey))
-        }
-        if (excessprops.length) {
-        let err = [
-            'Invalid target object: all these properties are excessive\r\n> '
-            ,excessprops.join('\r\n> ')+'\r\n'
-            ,'\r\n\r\nTry to use excessiveProps option in the new Stigma constructor to bypass this error.'].join('');
-            return new Error(err)
+    }.bind(this);
+    
+    if (isFunction(this.rule)) {
+        switch (this.rule) {
+            case Boolean  : return checkOutVal(!isBoolean  (this.value),'Boolean' );
+            case Number   : return checkOutVal(!isNumber   (this.value),'Number'  );
+            case String   : return checkOutVal(!isString   (this.value),'String'  );
+            case Date     : return checkOutVal(!isDate     (this.value),'Date'    );
+            case Array    : return checkOutVal(!isArray    (this.value),'Array'   );
+            default       : return this.rule.call(value,this.value,this.prop)
         }
     }
+    if (isRegExp(this.rule)) { return this.rule.test(this.value) ? void 0 : '{\''+this.prop+'\': \''+this.value+'\'}\r\nfailed against '+this.rule; }
+    throw new Error(`Unrecognized rule type: property name: "${this.prop}"\n schema: ${JSON.stringify(this.rule,null,'\t')} `)
+  }
+}
 
-    for (let schemakey of skeys) {
-        let rule    = this.schema_[schemakey];
-        let value   = target[schemakey];
-        let err;
+export class Rules<Obj> {
+  static INVALID_SCHEMA = new Error('Invalid schema: schema object requires at least one prop')
+         keys : Array<string>;
+         rules: object  = {};
+  constructor(
+      public schema: Schema<Obj>
+    , public redundantProps: boolean = true){
+    this.redundantProps = redundantProps;
+    this.keys = Object.keys(this.schema).filter(k => {
+      if(!this.schema[k]){ delete this.schema[k]; return }
+      return true
+    });
+    if(!this.keys.length){ throw Rules.INVALID_SCHEMA }
+    // constructing schema object
+    for (let i = 0; i < this.keys.length; i++) {
+      let key         = this.keys[i];
+      let rule        = this.schema[key];
+      let values      = isArray(rule) ? rule : [rule];
+      this.rules[key] = values.map((rule) =>{
+        if(rule instanceof Rules || rule instanceof Rule){ return rule }
+        if(rule === 'required' || rule === 'optional') { return rule }
+        return isObject(rule) ? new Rules(rule,redundantProps) :  new Rule(rule,key)
         
-        //  Speeding up rule checking
-        //  Rule is INSTANCE of Stigma
-        if (rule instanceof Stigma) {
-            if (value == void 0) { return new Error('{ '+schemakey+' : is required! }') }
-            if (err = rule.validateOf(value,sync)       ) { return err};
-            continue
-        }
-        //  Rule is INSTANCE of Rule
-        if (rule instanceof Rule)   {
-            if (value == void 0) { return new Error('{ '+schemakey+' : is required! }') }
-            if (err = rule.validateOf(value,target)   ) { return err};
-            continue
-        }
-            Array.isArray(rule) || (rule = [rule]);
-        for (let current of rule) {
-            if(current == 'required') {
-                // if no value, then return error message
-                if(value == void 0){ return new Error(`{ ${schemakey} : is required! }`)}
-                else { continue } // iterate over to the next rule
-            }
-            if(current == 'optional') {
-                if(value == void 0) { break } // if no value present then break
-                else { continue }             // else continue to next rule
-            }
-            if(err = new Rule(current,schemakey).validateOf(value,target) ){return err} }
-
+      })
     }
+  }
+  
+  validateOf<T>(target: T, sync : true , verbose?: boolean): ValidationError
+  validateOf<T>(target: T, sync?: false, verbose?: boolean): Promise<T>
+  validateOf(target,sync?){ return this.validate.apply(this,arguments) }
+  
+  target: object;
+  static OBJECT_IS_MISSING           = new Error('Invalid argument: object is missing');
+  static INVALID_OBJ_REDUNDANT_PROPS = new Error('Invalid argument: redundant properties:');
+  static VALIDATION_PROP_REQUIRED    = new Error('Invalid argument: the %s property is missing in');
+  
+  validate<T>(target: T & object, sync : true , verbose?: boolean): ValidationError
+  validate<T>(target: T & object, sync?: false, verbose?: boolean): Promise<T>
+  
+  validate(targetObj, sync, verbose?) {
+    if(!isObject(targetObj)) { return Rules.OBJECT_IS_MISSING }
+    this.target = targetObj;
+    
+    let skeys       = this.keys;
+    let tkeys       = Object.keys(targetObj); // keys of targetObj object provided by validateOf(targetObj)
+    if (!skeys.length) {return Rules.INVALID_SCHEMA}
+    if (!tkeys.length) {return Rules.OBJECT_IS_MISSING}
+    if (this.redundantProps) {
+      let excessive = [];
+      main: for (let i = 0; i < tkeys.length; i++) {
+        let targetKey = tkeys[i];
+        for (let j = 0; j < skeys.length; j++) {
+          let schemaKey = skeys[j];
+          if(targetKey === schemaKey){ continue main }
+        }
+        if(!excessive.includes(targetKey)) {
+          excessive.push(targetKey)
+        }
+      }
+      if (excessive.length) {
+      let err: any = Rules.INVALID_OBJ_REDUNDANT_PROPS;
+          if(verbose){
+          let errStr = [
+               '\n'
+              ,'> '+excessive.join('\r\n> ')
+              ,'\n' + JSON.stringify(targetObj,null,'\t').substr(0,256)
+              ,'\n\nTry to use excessiveProps option in the new Stigma constructor to bypass this error.'].join('');
+            err.message+=errStr
+          }
+        
+          return Rules.INVALID_OBJ_REDUNDANT_PROPS
+      }
+    }
+  
+    for (let i = 0; i < this.keys.length; i++) {
+      let key   = this.keys[i];
+      let rule  = this.rules[key];
+      let value = this.target[key];
+      let rules = Array.isArray(rule) ? rule : [rule];
+      for (let j = 0; j < rules.length; j++) {
+        let rule = rules[j];
+        if(rule === 'required') {
+          if (value) {continue}
+          let err:any = Rules.VALIDATION_PROP_REQUIRED
+          if(verbose){ err.message = err.message.replace('%s',key) };
+          return sync ? err : Promise.reject(err);
+        }
+        
+        if(rule === 'optional') {
+          // if no value present then continue
+          if(value) { continue }
+          break
+        }
+        let err = rule.validate(value, sync, targetObj, verbose);
+        if(isString(err) || err instanceof Error){
+          if(sync){ return err }
+          return Promise.reject(err)
+        }
+      }
+    }
+    if(!sync){ return Promise.resolve(targetObj) }
+  }
+
 }
 
-// @param {object} - object to compare schema against
-// @callback - optional
-export const TARGET_IS_MISSING = new Error('Stigma validator: Invalid argument: target is missing!');
-Stigma.prototype.validateOf = function (target,sync) {
-    if(target === undefined){ throw TARGET_IS_MISSING  }
-    let err = stigmaValidate.call(this,target,sync);
-    if(sync){ return err }
-    return err === undefined ? Promise.resolve(target) : Promise.reject(err)
-};
+export {Rules as Stigma}

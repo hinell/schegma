@@ -1,11 +1,13 @@
 {
   "name": "stigma",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "",
   "main": "./index.js",
   "scripts": {
-    "test": "tsc && node src/test.js && node src/example.js",
-    "test.inspect": "tsc && node --inspect-brk src/test.js && node src/example.js ",
+    "build": "tsc --watch false ",
+    "test": "node src/test.js && node src/example.js",
+    "test.inspect": "node --inspect-brk src/test.js",
+    "test.example.insp": "node --inspect-brk=92930 src/example.js",
     "postinstall": "tsc"
   },
   "repository": {
