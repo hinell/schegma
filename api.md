@@ -3,25 +3,24 @@
 **[PROJECT PAGE](../../) | [README](README.md) | [EXAMPLES][exmp]**
 
 ### Exports
-[class Stigma(...)][st]
-- [.validate(...)][stval]
-- [.validateOf(...)][stval]
+**[class Rules(...)][st]**
+- **[.validate(...)][stval]**
+- **[.validateOf(...)][stval]**
 - Errors that are _returned_ by validate():
-- [static OBJECT_IS_MISSING][stval]
-- [static INVALID_OBJ_REDUNDANT_PROPS][stval]
-- [static VALIDATION_PROP_REQUIRED][stval]
+- **[static OBJECT_IS_MISSING][stval]**
+- **[static INVALID_OBJ_REDUNDANT_PROPS][stval]**
+- **[static VALIDATION_PROP_REQUIRED][stval]**
 
-[class Rules](#class-rule) - Rule wrapper
-<br>[min(n)][helpers] - rule helper that can be used inside schema
-<br>[max(n)][helpers]
+**[class Rule](#class-rule)** - Rule wrapper
+<br>**[min(n)][helpers]** - rule helper that can be used inside schema
+<br>**[max(n)][helpers]**
 
-### class Stigma
-[st]: #class-stigma
+### `class Rules`
+[st]: #class-rules
 ```typescript
-new Stigma(schema: schema, redundantProps: boolean = true)
+new Rules(schema: schema, redundantProps: boolean = true)
 ``` 
 Instantiates validation object.
-Can be also accessed by ``Rules`` alias.
 ```typescript
 schema: { field : Rule | Array<Rule>}
 Rule: 
@@ -50,14 +49,14 @@ The rules ``'optional'`` and ``'required'`` are special words that used
 <br>and otherwise if ``'required'`` is specified:
 
 ```typescript
-  new Stigma({foo: 'optional', bar: 'required'})
+  new Rules({foo: 'optional', bar: 'required'})
     .validate({
       foo: null,// no errors
-      bar: null // returns Stigma.VALIDATION_PROP_REQUIRED
+      bar: null // returns Rules.VALIDATION_PROP_REQUIRED
     },true)
 ```
 
-#### .validate(...) and .validateOf(...)
+#### `.validate(...) and .validateOf(...)`
 [stval]: #validate-and-validateof
 
 ```typescript 
@@ -69,11 +68,11 @@ Validation function of the stigma object with respective alias.
 <br>The second is used to configure returned object: promise or simple error/string.
 
 Whenever the error occurs the method returns the following errors:
-<br>``Stigma.OBJECT_IS_MISSING`` - when first argument is missing
-<br>``Stigma.INVALID_OBJ_REDUNDANT_PROPS`` - when there are redundunt (regarding those in schema) fileds in the provided object
-<br>``Stigma.VALIDATION_PROP_REQUIRED`` - when value is ``'required'`` by the schema but missing in provided object
+<br>**``Rules.OBJECT_IS_MISSING``** - when first argument is missing
+<br>**``Rules.INVALID_OBJ_REDUNDANT_PROPS``** - when there are redundunt (regarding those in schema) fileds in the provided object
+<br>**``Rules.VALIDATION_PROP_REQUIRED``** - when value is ``'required'`` by the schema but missing in provided object
 
-### class Rule
+### `class Rule`
 
 ```typescript
 new Rule(rule,name)
@@ -83,8 +82,8 @@ The rule wrapper.
 ### Rule helpers
 [helpers]: #rule-helpers
 Here also some useful exports that can be used during schema building:
-<br>**``min(n: string | number): (v) => ... ``** - return function can be used to restrict string length or number count
-<br>**``max(n: string | number): (v) => ... ``** - see usage below
+<br>**`min(n: string | number): (v) => ...`** - return function can be used to restrict string length or number count
+<br>**`max(n: string | number): (v) => ...`** - see usage below
 
 ### EXAMPLES
 [exmp]: #examples
@@ -93,8 +92,8 @@ Here also some useful exports that can be used during schema building:
 Let's assume we want to validate ``_id`` field. We can do this by creating a validation function
 <br>that checks ID class and returns error (just string) if something is going wrong:
 ```typescript
-import {Stigma} from 'stigma';
-error = new Stigma({_id: value => (value instanceof IDClass) || 'IDClass instance expected!' })
+import {Rules} from 'stigma';
+error = new Rules({_id: value => (value instanceof IDClass) || 'IDClass instance expected!' })
   .validate(someObject, true)
 ```
 You won't get the true in the promise if value is instance of the IDClass.
@@ -103,9 +102,9 @@ You won't get the true in the promise if value is instance of the IDClass.
 Schema below contains two rules: ``String`` and ``max``
 <br>The key below is expected to be of string type and no more than six chars long:
 ```typescript
-import {Stigma, max} from 'stigma';
+import {Rules, max} from 'Rules';
 // return error if "key" is not a string or longer than 6 chars
-error = new Stigma({key: [ String, max(6) ] }).validate({key: 'keyvalue'}, true)
+error = new Rules({key: [ String, max(6) ] }).validate({key: 'keyvalue'}, true)
 ```
 
 <hr>

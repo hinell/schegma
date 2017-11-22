@@ -1,10 +1,10 @@
 // <reference  path='./stigma.d.ts'>
-import {max, min, Rules, Stigma} from './stigma'
+import {max, min, Rules as Stigma} from './stigma'
 
-new Rules({
+new Stigma({
    name     : String
-  ,friend   : (value) => value == 'Finn' ?  null : 'Finn the only best friend!'
-  ,email    : [String,(value, key) => value.includes('@') ? null : 'Email is invalid! ']
+  ,friend   : (value, key, rule) => value === 'Finn' || 'Finn the only best friend!'
+  ,email    : [String,(value, key, rule) => value.includes('@') || 'Email is invalid! ']
 })
 .validate({
     name  : 'Jake'

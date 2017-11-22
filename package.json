@@ -8,7 +8,8 @@
     "test": "node src/test.js && node src/example.js",
     "test.inspect": "node --inspect-brk src/test.js",
     "test.example.insp": "node --inspect-brk=92930 src/example.js",
-    "postinstall": "tsc"
+    "postinstall": "tsc --watch false ",
+    "lint": "sh -c 'tslint -p tsconfig.json'"
   },
   "repository": {
     "type": "git",

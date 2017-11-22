@@ -1,17 +1,22 @@
 <!-- [![Image caption](/project.logo.jpg)](#) -->
 
+
 # STIGMA
 [d]: #stigma
+
+![](https://img.shields.io/github/license/hinell/stigma.svg?style=flat-square)
+![](https://img.shields.io/github/package-json/v/hinell/stigma.svg?style=flat-square)
+[![Travis](https://img.shields.io/travis/hinell/stigma.svg?style=flat-square)]()
 
 **[START][gt] | [USAGE][u] | [API][a] | [EXAMPLES][exmp] | [AUTHOR][auth] | [CONTRIBUTE][cpl] | [LICENSE][cpl] | [SUPPORT][ps]**
 
 [exmp]: api.md#examples
 [a]: api.md
 
-> Declarative JavaScript and TypeScript schema validation tool.
+> Declarative JavaScript and TypeScript js object schema validation tool.
 
 ```typescript
-new Stigma({
+new Rules({
     name      : [String, min(4)]
   , password  : [String, min(6)]
   , email     : [String, (string) => /@/g.test(string) || '@ is missing!' ]
@@ -26,16 +31,13 @@ new Stigma({
 
 ```
 
-# MOTIVATION
-The well-know difficulties of maintaining data consistent throughout the project is the main source of motivation.
-
 ### ALTERNATIVES
 **Q:** Why don't to use joi or any other schema-validation library instead?
 <br>**A:** Well the reason of this is that some of these libraries
 <br>are too complicated and time-expensive to learn for me.
 <br>The Stigma was created as ad-hoc solution and isn't intended 
 <br>to be replacement for any of these useful librariess.
-<br>You are free to use any you like.
+<br>You are free to choose any.
 
 ## GETTING STARTED
 [gt]: #getting-started 'Getting started guide'
@@ -53,10 +55,10 @@ $ npm i -S hinell/stigma
 [u]: #usage 'Product usage'
 
 ```typescript
-  import {Stigma} from 'stigma';
+  import {Rules} from 'stigma';
   let schema        = {description: String }
   let dataStructure = {description: 'Description of most powerful library ever....'};
-  let error         =  new Stigma(schema).validate(dataStructure,true);
+  let error         =  new Rules(schema).validate(dataStructure,true);
   //  do something with error
 ```
 ## AUTHOR

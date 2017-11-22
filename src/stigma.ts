@@ -25,8 +25,8 @@ SOFTWARE.
 export type ValidationError = Error | string | void;
 // Here we have an interesting bug with literals
 // see more here: https://github.com/Microsoft/TypeScript/pull/10676#issuecomment-244255103
-export type RuleT<T> =
-  {(this: T, val:any, prop: string): ValidationError}
+export type RuleObj =
+  {(this: Rule, val: any, rule: Rule): ValidationError | boolean }
   | 'required'
   | 'optional'
   | 'string'
@@ -34,6 +34,7 @@ export type RuleT<T> =
   | 'number'
   | 'boolean'
   | 'date'
+  | Function
   | FunctionConstructor
   | NumberConstructor
   | StringConstructor
@@ -42,98 +43,117 @@ export type RuleT<T> =
   | DateConstructor
   | Rule | RegExp
 
-export type Descriptor  <TargetT> = RuleT<TargetT> | Rules<TargetT>;
+export type Descriptor  <TargetT> = RuleObj | Rules<TargetT>;
 export type SchemaSingle<TargetT> = { [K in keyof TargetT] : Descriptor<TargetT>   }
 export type SchemaArray <TargetT> = { [K in keyof TargetT] : Descriptor<TargetT>[] }
 export type SchemaMixed <TargetT> = { [K in keyof TargetT] : Descriptor<TargetT> | Descriptor<TargetT>[] }
 export type Schema<TargetT> = object & (SchemaSingle<TargetT> | SchemaArray <TargetT> | SchemaMixed<TargetT>);
 
-export const isBoolean  = function (v) { return typeof v === 'boolean'              };
-export const isNumber   = function (v) { return typeof v === 'number'               };
-export const isString   = function (v) { return typeof v === 'string'  && v.length  };
-export const isDate     = function (v) { return v instanceof Date                   };
-export const isArray    = function (v) { return v instanceof Array                  };
-export const isFunction = function (v) { return v instanceof Function               };
-export const isRegExp   = function (v) { return v instanceof RegExp                 };
+export const isBoolean  = function (v) { return typeof v === 'boolean'  };
+export const isNumber   = function (v) { return typeof v === 'number'   };
+export const isString   = function (v) { return typeof v === 'string'  && !!v.length  };
+export const isDate     = function (v) { return v instanceof Date       };
+export const isArray    = function (v) { return v instanceof Array      };
+export const isFunction = function (v) { return v instanceof Function   };
+export const isRegExp   = function (v) { return v instanceof RegExp     };
 export const isObject   = function (v) { return v && v.constructor === Object.prototype.constructor};
 export const min        = function (n = 1) {
   return function (v){
     let err, l;
     if(isNumber(v)){
-      err = `The number is below the limit set to ${n}`;
+      err = `The number is below or equal to the limit set to ${n}`;
       l = v;
     } else {
       err = `At least ${n} characters are required`;
       l = v.length
     }
-    return (l < n) && new Error(err)
+    if(l < n){ return new Error(err) }
   }
 }
 export const max        = function (n = 1) {
   return function (v){
     let err, l;
     if(isNumber(v)){
-      err = `The number is above the limit set to ${n}`;
+      err = `The number is above or equal to the limit set to ${n}`;
       l = v;
     } else {
       err = `No more than ${n} characters are expected`;
       l = v.length
     }
-    
-    return (l > n) && new Error(err)
+    if(l > n){ return new Error(err) }
   }
 }
 
 
-export class Rule<T = any> {
-  static INVALID_RULE = new TypeError('Invalid argument: function, string, regExp or Rule instance is expected!');
+export class Rule {
+  static INVALID_RULE   = new TypeError('Invalid argument: function, string, regExp or Rule instance is expected!');
+  static INVALID_VALUE  = new Error('Invalid value:\n\tvalue of the "%s"\n\tis expected to be a "%s1"');
+  
   rule: any;
-  value: any;
+  ruleJSON: string;
   prop: string;
-  constructor(rule: RuleT<T>, prop) {
+  constructor(rule: RuleObj, prop = '') {
     if (!rule) { throw Rule.INVALID_RULE }
     if (rule instanceof Rule) {return rule}
-    this.rule  = rule;
-    this.prop  = prop;
+    this.rule     = rule;
+    this.ruleJSON = JSON.stringify(rule, void 0,'\t') || this.rule.name;
+    this.prop     = prop;
   }
   
-  static INVALID_VALUE = new Error('Invalid value:\nvalue of the "%s" is expected to be a "%s1"');
+  targetObj: any;
+  value: any;
   
-  validateOf(target,sync?){ return this.validate.apply(this,arguments)  }
-  validate(value,sync,targetObj?,verbose?) {
+  validateOf(value,sync?): ValidationError { return this.validate.apply(this,arguments)  }
+  validate(value,sync,targetObj?,verbose?): ValidationError  {
     this.value      = value;
-    let checkOutVal = function (conresultOfCodition,m?){
-        if(conresultOfCodition === true) {
-          let err:any = Rule.INVALID_VALUE;
-          if (verbose) {
+    this.targetObj  = targetObj;
+    if (isFunction(this.rule)) {
+        let error;
+        switch (this.rule) {
+            case Boolean  : error = isBoolean(value); break;
+            case Number   : error = isNumber (value); break;
+            case String   : error = isString (value); break;
+            case Date     : error = isDate   (value); break;
+            case Array    : error = isArray  (value); break;
+            // TODO: Pass targetObject argument to the callback
+            default       : error = this.rule.call(this,this.value,this)
+        }
+        
+        if (error instanceof Error){
+          return error
+        } else if(isString(error) || (isBoolean(error) && !error)){
+        const err: any = Rule.INVALID_VALUE;
             err.message = err.message
               .replace('%s', this.prop)
-              .replace('%s1', JSON.stringify(this.rule, null, '\t') || m)
-            if (targetObj) { err.message += '\n' + JSON.stringify(targetObj, null, '\t').substr(0, 256) + '\n'; }
-          }
+              .replace('%s1', this.ruleJSON || this.rule.name)
+            if (targetObj) {
+              err.message += '\n' + this.ruleJSON.substr(0, 256) + '\n'; }
               return err
         }
-    }.bind(this);
-    
-    if (isFunction(this.rule)) {
-        switch (this.rule) {
-            case Boolean  : return checkOutVal(!isBoolean  (this.value),'Boolean' );
-            case Number   : return checkOutVal(!isNumber   (this.value),'Number'  );
-            case String   : return checkOutVal(!isString   (this.value),'String'  );
-            case Date     : return checkOutVal(!isDate     (this.value),'Date'    );
-            case Array    : return checkOutVal(!isArray    (this.value),'Array'   );
-            default       : return this.rule.call(value,this.value,this.prop)
-        }
+        return
     }
-    if (isRegExp(this.rule)) { return this.rule.test(this.value) ? void 0 : '{\''+this.prop+'\': \''+this.value+'\'}\r\nfailed against '+this.rule; }
-    throw new Error(`Unrecognized rule type: property name: "${this.prop}"\n schema: ${JSON.stringify(this.rule,null,'\t')} `)
+    if (isRegExp(this.rule)) {
+      if (!this.rule.test(this.value)) {
+        return `RegExp validation failed: \n ${
+          targetObj
+            ? JSON.stringify(targetObj, void 0,'\t')
+            : `${this.prop} : ${ this.value}`
+          } \n ${this.ruleJSON}`;
+      }
+      return
+    }
+    throw new Error(`Unrecognized rule type:
+    property name: '${this.prop}'
+    rule :  ${this.ruleJSON}
+    value: '${this.value}'
+    `)
   }
 }
 
 export class Rules<Obj> {
   static INVALID_SCHEMA = new Error('Invalid schema: schema object requires at least one prop')
-         keys : Array<string>;
-         rules: object  = {};
+  keys: Array<string>;
+  rules: object  = {};
   constructor(
       public schema: Schema<Obj>
     , public redundantProps: boolean = true){
@@ -145,9 +165,9 @@ export class Rules<Obj> {
     if(!this.keys.length){ throw Rules.INVALID_SCHEMA }
     // constructing schema object
     for (let i = 0; i < this.keys.length; i++) {
-      let key         = this.keys[i];
-      let rule        = this.schema[key];
-      let values      = isArray(rule) ? rule : [rule];
+      const key         = this.keys[i];
+      const rule        = this.schema[key];
+      const values      = isArray(rule) ? rule : [rule];
       this.rules[key] = values.map((rule) =>{
         if(rule instanceof Rules || rule instanceof Rule){ return rule }
         if(rule === 'required' || rule === 'optional') { return rule }
@@ -161,6 +181,7 @@ export class Rules<Obj> {
   validateOf<T>(target: T, sync?: false, verbose?: boolean): Promise<T>
   validateOf(target,sync?){ return this.validate.apply(this,arguments) }
   
+  targetKeys: Array<string>
   target: object;
   static OBJECT_IS_MISSING           = new Error('Invalid argument: object is missing');
   static INVALID_OBJ_REDUNDANT_PROPS = new Error('Invalid argument: redundant properties:');
@@ -173,16 +194,16 @@ export class Rules<Obj> {
     if(!isObject(targetObj)) { return Rules.OBJECT_IS_MISSING }
     this.target = targetObj;
     
-    let skeys       = this.keys;
-    let tkeys       = Object.keys(targetObj); // keys of targetObj object provided by validateOf(targetObj)
+    const skeys = this.keys;
+    const tkeys = this.targetKeys = Object.keys(targetObj); // keys of targetObj object provided by validateOf(targetObj)
     if (!skeys.length) {return Rules.INVALID_SCHEMA}
     if (!tkeys.length) {return Rules.OBJECT_IS_MISSING}
     if (this.redundantProps) {
-      let excessive = [];
+      const excessive = [];
       main: for (let i = 0; i < tkeys.length; i++) {
-        let targetKey = tkeys[i];
+        const targetKey = tkeys[i];
         for (let j = 0; j < skeys.length; j++) {
-          let schemaKey = skeys[j];
+          const schemaKey = skeys[j];
           if(targetKey === schemaKey){ continue main }
         }
         if(!excessive.includes(targetKey)) {
@@ -190,14 +211,13 @@ export class Rules<Obj> {
         }
       }
       if (excessive.length) {
-      let err: any = Rules.INVALID_OBJ_REDUNDANT_PROPS;
+      const err: any = Rules.INVALID_OBJ_REDUNDANT_PROPS;
           if(verbose){
-          let errStr = [
+              err.message += [
                '\n'
               ,'> '+excessive.join('\r\n> ')
-              ,'\n' + JSON.stringify(targetObj,null,'\t').substr(0,256)
+              ,'\n' + JSON.stringify(targetObj,void 0,'\t').substr(0, 256)
               ,'\n\nTry to use excessiveProps option in the new Stigma constructor to bypass this error.'].join('');
-            err.message+=errStr
           }
         
           return Rules.INVALID_OBJ_REDUNDANT_PROPS
@@ -205,15 +225,15 @@ export class Rules<Obj> {
     }
   
     for (let i = 0; i < this.keys.length; i++) {
-      let key   = this.keys[i];
-      let rule  = this.rules[key];
-      let value = this.target[key];
-      let rules = Array.isArray(rule) ? rule : [rule];
+      const key   = this.keys[i];
+      const rule  = this.rules[key];
+      const value = this.target[key];
+      const rules = Array.isArray(rule) ? rule : [rule];
       for (let j = 0; j < rules.length; j++) {
-        let rule = rules[j];
+        const rule = rules[j];
         if(rule === 'required') {
           if (value) {continue}
-          let err:any = Rules.VALIDATION_PROP_REQUIRED
+          const err: any = Rules.VALIDATION_PROP_REQUIRED
           if(verbose){ err.message = err.message.replace('%s',key) };
           return sync ? err : Promise.reject(err);
         }
@@ -223,7 +243,7 @@ export class Rules<Obj> {
           if(value) { continue }
           break
         }
-        let err = rule.validate(value, sync, targetObj, verbose);
+        const err = rule.validate(value, sync, targetObj, verbose);
         if(isString(err) || err instanceof Error){
           if(sync){ return err }
           return Promise.reject(err)
@@ -235,4 +255,3 @@ export class Rules<Obj> {
 
 }
 
-export {Rules as Stigma}
