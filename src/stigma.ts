@@ -88,7 +88,7 @@ export const max        = function (n = 1) {
 export class Rule {
   static INVALID_RULE   = new TypeError('Invalid argument: function, string, regExp or Rule instance is expected!');
   static INVALID_VALUE  = new Error('Invalid value:\n\tvalue of the "%s"\n\tis expected to be a "%s1"');
-  
+  static INVALID_REGEXP = new Error('RegExp validation failed')
   rule: any;
   ruleJSON: string;
   prop: string;
@@ -96,17 +96,18 @@ export class Rule {
     if (!rule) { throw Rule.INVALID_RULE }
     if (rule instanceof Rule) {return rule}
     this.rule     = rule;
-    this.ruleJSON = JSON.stringify(rule, void 0,'\t') || this.rule.name;
     this.prop     = prop;
   }
   
   targetObj: any;
   value: any;
   
-  validateOf(value,sync?): ValidationError { return this.validate.apply(this,arguments)  }
-  validate(value,sync,targetObj?,verbose?): ValidationError  {
+  validate(value, targetObj?, verbose?): ValidationError  {
     this.value      = value;
     this.targetObj  = targetObj;
+    if(verbose) {
+      this.ruleJSON = JSON.stringify(this.rule, void 0,'\t') || this.rule.name;
+    }
     if (isFunction(this.rule)) {
         let error;
         switch (this.rule) {
@@ -118,35 +119,44 @@ export class Rule {
             // TODO: Pass targetObject argument to the callback
             default       : error = this.rule.call(this,this.value,this)
         }
-        
         if (error instanceof Error){
-          return error
+          throw error
         } else if(isString(error) || (isBoolean(error) && !error)){
-        const err: any = Rule.INVALID_VALUE;
-            err.message = err.message
+          Rule.INVALID_VALUE.message = error;
+          if (verbose) {
+            Rule.INVALID_VALUE.message +=
+            Rule.INVALID_VALUE.message
               .replace('%s', this.prop)
               .replace('%s1', this.ruleJSON || this.rule.name)
             if (targetObj) {
-              err.message += '\n' + this.ruleJSON.substr(0, 256) + '\n'; }
-              return err
+              Rule.INVALID_VALUE.message += '\n' + this.ruleJSON.substr(0, 256) + '\n';
+            }
+          }
+          return Rule.INVALID_VALUE
         }
         return
     }
     if (isRegExp(this.rule)) {
       if (!this.rule.test(this.value)) {
-        return `RegExp validation failed: \n ${
-          targetObj
-            ? JSON.stringify(targetObj, void 0,'\t')
-            : `${this.prop} : ${ this.value}`
-          } \n ${this.ruleJSON}`;
+        if (verbose) {
+          Rule.INVALID_REGEXP.message +=
+            `${targetObj
+              ? JSON.stringify(targetObj, void 0, '\t')
+              : `${this.prop} : ${ this.value}`
+              } \n ${this.ruleJSON}`;
+        }
+        throw Rule.INVALID_REGEXP
       }
       return
     }
-    throw new Error(`Unrecognized rule type:
-    property name: '${this.prop}'
-    rule :  ${this.ruleJSON}
-    value: '${this.value}'
-    `)
+    if (verbose) {
+      Rule.INVALID_RULE.message +=`
+      property name: '${this.prop}'
+      rule :  ${this.ruleJSON}
+      value: '${this.value}'
+      `;
+    }
+    throw Rule.INVALID_RULE
   }
 }
 
@@ -167,37 +177,29 @@ export class Rules<Obj> {
     for (let i = 0; i < this.keys.length; i++) {
       const key         = this.keys[i];
       const rule        = this.schema[key];
-      const values      = isArray(rule) ? rule : [rule];
-      this.rules[key] = values.map((rule) =>{
+      const rules      = isArray(rule) ? rule : [rule];
+      this.rules[key] = rules.map((rule) =>{
         if(rule instanceof Rules || rule instanceof Rule){ return rule }
         if(rule === 'required' || rule === 'optional') { return rule }
         return isObject(rule) ? new Rules(rule,redundantProps) :  new Rule(rule,key)
-        
       })
     }
   }
-  
-  validateOf<T>(target: T, sync : true , verbose?: boolean): ValidationError
-  validateOf<T>(target: T, sync?: false, verbose?: boolean): Promise<T>
-  validateOf(target,sync?){ return this.validate.apply(this,arguments) }
   
   targetKeys: Array<string>
   target: object;
   static OBJECT_IS_MISSING           = new Error('Invalid argument: object is missing');
   static INVALID_OBJ_REDUNDANT_PROPS = new Error('Invalid argument: redundant properties:');
-  static VALIDATION_PROP_REQUIRED    = new Error('Invalid argument: the %s property is missing in');
+  static VALIDATION_PROP_REQUIRED    = new Error('Invalid argument: the "%s" property is missing');
   
-  validate<T>(target: T & object, sync : true , verbose?: boolean): ValidationError
-  validate<T>(target: T & object, sync?: false, verbose?: boolean): Promise<T>
-  
-  validate(targetObj, sync, verbose?) {
-    if(!isObject(targetObj)) { return Rules.OBJECT_IS_MISSING }
+  private validateSync(targetObj, verbose?) {
+    if(!isObject(targetObj)) { throw Rules.OBJECT_IS_MISSING }
     this.target = targetObj;
     
     const skeys = this.keys;
     const tkeys = this.targetKeys = Object.keys(targetObj); // keys of targetObj object provided by validateOf(targetObj)
-    if (!skeys.length) {return Rules.INVALID_SCHEMA}
-    if (!tkeys.length) {return Rules.OBJECT_IS_MISSING}
+    if (!skeys.length) { throw Rules.INVALID_SCHEMA }
+    if (!tkeys.length) { throw Rules.OBJECT_IS_MISSING }
     if (this.redundantProps) {
       const excessive = [];
       main: for (let i = 0; i < tkeys.length; i++) {
@@ -220,7 +222,7 @@ export class Rules<Obj> {
               ,'\n\nTry to use excessiveProps option in the new Stigma constructor to bypass this error.'].join('');
           }
         
-          return Rules.INVALID_OBJ_REDUNDANT_PROPS
+          throw Rules.INVALID_OBJ_REDUNDANT_PROPS
       }
     }
   
@@ -233,9 +235,9 @@ export class Rules<Obj> {
         const rule = rules[j];
         if(rule === 'required') {
           if (value) {continue}
-          const err: any = Rules.VALIDATION_PROP_REQUIRED
-          if(verbose){ err.message = err.message.replace('%s',key) };
-          return sync ? err : Promise.reject(err);
+          const error: any = Rules.VALIDATION_PROP_REQUIRED
+          error.message = error.message.replace('%s',key)
+          throw Rules.VALIDATION_PROP_REQUIRED
         }
         
         if(rule === 'optional') {
@@ -243,14 +245,26 @@ export class Rules<Obj> {
           if(value) { continue }
           break
         }
-        const err = rule.validate(value, sync, targetObj, verbose);
-        if(isString(err) || err instanceof Error){
-          if(sync){ return err }
-          return Promise.reject(err)
-        }
+        const error = (rule as Rule).validate(value, targetObj, verbose);
+        if(isString(error) || error instanceof Error){ throw error}
       }
     }
+  }
+  
+  
+  validate<T>(target: T & object, sync: true , verbose?: boolean): T;
+  validate<T>(target: T & object, sync?      , verbose?: boolean): Promise<T>
+  
+  validate(targetObj, sync, verbose) {
+    try {
+      this.validateSync(targetObj, verbose);
+    } catch (error) {
+      if(sync) {throw error}
+      return Promise.reject(error)
+    }
+    
     if(!sync){ return Promise.resolve(targetObj) }
+    return targetObj
   }
 
 }

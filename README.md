@@ -6,7 +6,7 @@
 
 ![](https://img.shields.io/github/license/hinell/stigma.svg?style=flat-square)
 ![](https://img.shields.io/github/package-json/v/hinell/stigma.svg?style=flat-square)
-[![Travis](https://img.shields.io/travis/hinell/stigma.svg?style=flat-square)]()
+[![Travis](https://img.shields.io/travis/hinell/stigma.svg?style=flat-square)](https://travis-ci.org/hinell/stigma)
 
 **[START][gt] | [USAGE][u] | [API][a] | [EXAMPLES][exmp] | [AUTHOR][auth] | [CONTRIBUTE][cpl] | [LICENSE][cpl] | [SUPPORT][ps]**
 
@@ -16,19 +16,22 @@
 > Declarative JavaScript and TypeScript js object schema validation tool.
 
 ```typescript
-new Rules({
-    name      : [String, min(4)]
-  , password  : [String, min(6)]
-  , email     : [String, (string) => /@/g.test(string) || '@ is missing!' ]
-  , biography : ['optional', String, min(32), max(512)]
-  , birthDate : ['optional', Date]
-  , code      : ['optional', Number]
-}).validate({
-    name      : 'Ragnarök'
-  , password  : '12345qwerty'
-  , email     : 'what?'
-},true); // => '@ is missing!'
-
+try {
+  new Rules({
+      name     : [String, min(4)]
+    , password : [String, min(6)]
+    , email    : [String, (string) => /@/g.test(string) || '@ is missing!']
+    , biography: ['optional', String, min(32), max(512)]
+    , birthDate: ['optional', Date]
+    , code     : ['optional', Number]
+  }).validate({
+      name    : 'Ragnarok'
+    , password: '12345qwerty'
+    , email   : 'what?'
+  }, true);
+} catch (e) {
+  // throws Rule.INVALID_VALUE error with '@ is missing!' message
+}
 ```
 
 ### ALTERNATIVES
@@ -58,9 +61,18 @@ $ npm i -S hinell/stigma
   import {Rules} from 'stigma';
   let schema        = {description: String }
   let dataStructure = {description: 'Description of most powerful library ever....'};
-  let error         =  new Rules(schema).validate(dataStructure,true);
-  //  do something with error
+  try { new Rules(schema).validate(dataStructure,true); } 
+  catch (){/* do something with error */}
 ```
+or
+```typescript
+new Rules(...).validate(dataStructure)
+  .then(dataStructure => ...)
+  .catch(error => /* do something with error * )
+```
+### API
+Full API description can be found [here][a].
+
 ## AUTHOR
 [auth]: #author 'Credits & author\'s contacts info'
 You can follow me on [twitter](https://twitter.com/biteofpie) or just [email](mailto:al.neodim@gmail.com) me.

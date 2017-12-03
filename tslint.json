@@ -88,7 +88,7 @@
         "no-use-before-declare": true,
         "no-var-keyword": true,
         "no-void-expression": false,
-        "prefer-conditional-expression": true,
+        "prefer-conditional-expression": false,
         "radix": true,
         "restrict-plus-operands": true,
         "strict-boolean-expressions": false,
